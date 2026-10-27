@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Grimório PvP · teste de conexão</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@700&family=Alegreya+Sans:wght@400;700&family=Cinzel:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root { --bg:#121419; --panel:#1a1d24; --line:#2c313b; --ink:#ece6d6; --muted:#a8a294; --gold:#c9a14a; --gold-hi:#e9cd82; --ok:#7fcf86; --bad:#e8745f; }
+  * { box-sizing: border-box; }
+  body { margin:0; min-height:100vh; background: radial-gradient(ellipse at 50% 0%, #232838, var(--bg) 70%); color:var(--ink); font:16px/1.45 "Alegreya Sans", system-ui, sans-serif; display:grid; place-items:start center; padding:24px 16px; }
+  main { width:min(560px,100%); display:grid; gap:16px; }
+  h1 { margin:0; font:700 clamp(28px,7vw,40px)/1 "Cinzel", serif; color:var(--gold-hi); text-align:center; letter-spacing:.04em; }
+  .sub { text-align:center; color:var(--muted); margin:-6px 0 4px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px; display:grid; gap:12px; }
+  h2 { margin:0; font:700 15px "Alegreya SC", serif; letter-spacing:.08em; color:var(--gold-hi); }
+  .row { display:flex; gap:8px; flex-wrap:wrap; }
+  button { font:700 15px "Alegreya Sans"; padding:11px 16px; border-radius:10px; border:1px solid var(--line); background:#242832; color:var(--ink); cursor:pointer; }
+  button.primary { background:linear-gradient(180deg,#e2c37a,#b98f3e); color:#22190a; border-color:#e9cd82; }
+  button:disabled { opacity:.45; cursor:default; }
+  input { flex:1; min-width:0; font:700 20px "Cinzel", serif; letter-spacing:.3em; text-transform:uppercase; text-align:center; padding:10px; border-radius:10px; border:1px solid var(--line); background:#0f1115; color:var(--ink); }
+  .code { font:700 44px/1 "Cinzel", serif; letter-spacing:.25em; text-align:center; color:var(--gold-hi); }
+  .st { display:flex; align-items:center; gap:8px; color:var(--muted); font-size:14px; }
+  .dot { width:10px; height:10px; border-radius:50%; background:#555; flex:none; }
+  .dot.on { background:var(--ok); box-shadow:0 0 8px var(--ok); } .dot.bad { background:var(--bad); }
+  .players { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .pl { border:1px solid var(--line); border-radius:10px; padding:10px; text-align:center; }
+  .pl b { display:block; font:700 15px "Alegreya SC"; color:var(--gold-hi); }
+  .log { max-height:220px; overflow:auto; font-size:14px; display:grid; gap:4px; }
+  .log div { padding:6px 8px; border-radius:6px; background:#0f1115; }
+  .log .me { border-left:3px solid var(--gold); } .log .op { border-left:3px solid #5b8fe0; }
+  .hide { display:none !important; }
+  .err { color:var(--bad); font-size:14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Grimório PvP</h1>
+  <p class="sub">Teste de conexão entre dois jogadores</p>
+
+  <section class="card">
+    <div class="st"><span class="dot" id="dConn"></span><span id="tConn">Conectando ao servidor…</span></div>
+    <div class="err hide" id="err"></div>
+  </section>
+
+  <section class="card" id="lobby">
+    <h2>Criar uma sala</h2>
+    <button class="primary" id="bCreate" disabled>Criar sala e receber um código</button>
+    <h2>Ou entrar com um código</h2>
+    <div class="row"><input id="iCode" maxlength="4" placeholder="ABCD" autocomplete="off"><button id="bJoin" disabled>Entrar</button></div>
+  </section>
+
+  <section class="card hide" id="room">
+    <h2>Sala</h2>
+    <div class="code" id="tCode">----</div>
+    <p class="sub" id="tShare">Mande este código para o seu amigo.</p>
+    <div class="players">
+      <div class="pl"><b>Anfitrião</b><span class="st" style="justify-content:center"><span class="dot" id="dHost"></span><span id="tHost">—</span></span></div>
+      <div class="pl"><b>Convidado</b><span class="st" style="justify-content:center"><span class="dot" id="dGuest"></span><span id="tGuest">aguardando…</span></span></div>
+    </div>
+    <h2>Teste de jogadas</h2>
+    <p class="sub" style="margin:0">Cada toque envia uma "jogada" numerada. Ela deve aparecer na tela do outro em menos de um segundo.</p>
+    <div class="row"><button class="primary" id="bPing">Enviar jogada de teste</button><button id="bLeave">Sair da sala</button></div>
+    <div class="st" id="tLat"></div>
+    <div class="log" id="log"></div>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyBBi43orSuRZA-CY-ON0dph-wiApHAnpF0",
+  authDomain: "grimorio-pvp.firebaseapp.com",
+  databaseURL: "https://grimorio-pvp-default-rtdb.firebaseio.com",
+  projectId: "grimorio-pvp",
+  storageBucket: "grimorio-pvp.firebasestorage.app",
+  messagingSenderId: "924954383867",
+  appId: "1:924954383867:web:f98e095cef8d2a0985a75e"
+};
+const $ = id => document.getElementById(id);
+const show = (el, on) => el.classList.toggle('hide', !on);
+function fail(msg, e) { console.error(msg, e); $('err').textContent = msg + (e && e.code ? ' (' + e.code + ')' : ''); show($('err'), true); }
+
+let db, uid, code = null, role = null, offs = [], seen = 0, sent = 0;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db = firebase.database();
+} catch (e) { fail('Não consegui iniciar o Firebase.', e); }
+
+db.ref('.info/connected').on('value', s => {
+  const on = !!s.val();
+  $('dConn').className = 'dot ' + (on ? 'on' : 'bad');
+  $('tConn').textContent = on ? (uid ? 'Conectado ao servidor.' : 'Conectado. Entrando…') : 'Sem conexão com o servidor.';
+});
+
+firebase.auth().signInAnonymously().catch(e => fail(e.code === 'auth/operation-not-allowed' ? 'O login anônimo não está ativado no Firebase (Authentication → Anônimo).' : 'Falha no login anônimo.', e));
+firebase.auth().onAuthStateChanged(u => {
+  if (!u) return;
+  uid = u.uid;
+  $('tConn').textContent = 'Conectado ao servidor.';
+  $('bCreate').disabled = false; $('bJoin').disabled = false;
+  const last = sessionStorage.getItem('pvp-room');
+  if (last) { const [c, r] = last.split(':'); enter(c, r); }
+});
+
+const ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+const newCode = () => Array.from({ length: 4 }, () => ABC[Math.floor(Math.random() * ABC.length)]).join('');
+
+$('bCreate').onclick = async () => {
+  $('bCreate').disabled = true;
+  for (let i = 0; i < 5; i++) {
+    const c = newCode();
+    try {
+      await db.ref('rooms/' + c + '/host').set(uid);
+      await db.ref('rooms/' + c + '/meta').set({ created: firebase.database.ServerValue.TIMESTAMP, state: 'lobby' });
+      return enter(c, 'host');
+    } catch (e) { if (i === 4) fail('Não consegui criar a sala. As regras do banco foram publicadas?', e); }
+  }
+  $('bCreate').disabled = false;
+};
+$('bJoin').onclick = async () => {
+  const c = $('iCode').value.trim().toUpperCase();
+  if (!/^[A-Z]{4}$/.test(c)) { fail('O código tem 4 letras.'); return; }
+  const r = await db.ref('rooms/' + c).get().catch(e => { fail('Não consegui ler a sala.', e); return null; });
+  if (!r) return;
+  if (!r.exists()) { fail('Sala ' + c + ' não encontrada.'); return; }
+  const v = r.val();
+  if (v.host === uid) return enter(c, 'host');
+  if (v.guest === uid) return enter(c, 'guest');
+  if (v.guest) { fail('Essa sala já tem dois jogadores.'); return; }
+  try { await db.ref('rooms/' + c + '/guest').set(uid); enter(c, 'guest'); }
+  catch (e) { fail('Não consegui entrar na sala.', e); }
+};
+$('iCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('bJoin').click(); });
+
+function enter(c, r) {
+  code = c; role = r; sessionStorage.setItem('pvp-room', c + ':' + r);
+  show($('lobby'), false); show($('room'), true); show($('err'), false);
+  $('tCode').textContent = c;
+  $('tShare').textContent = r === 'host' ? 'Mande este código para o seu amigo.' : 'Você entrou como convidado.';
+  const pres = db.ref('rooms/' + c + '/presence/' + uid);
+  pres.set(true); pres.onDisconnect().remove();
+  const room = db.ref('rooms/' + c);
+  const onRoom = room.on('value', s => {
+    const v = s.val() || {}, p = v.presence || {};
+    const lbl = (id, d, t, wait) => { const on = id && p[id]; $(d).className = 'dot ' + (on ? 'on' : ''); $(t).textContent = !id ? wait : (id === uid ? 'você · ' : '') + (on ? 'online' : 'offline'); };
+    lbl(v.host, 'dHost', 'tHost', '—'); lbl(v.guest, 'dGuest', 'tGuest', 'aguardando…');
+  });
+  const mv = room.child('moves');
+  mv.on('child_added', s => {
+    const m = s.val(); seen++;
+    const mine = m.by === uid;
+    const d = document.createElement('div'); d.className = mine ? 'me' : 'op';
+    const lat = Date.now() - m.t;
+    d.textContent = '#' + s.key + ' · ' + (mine ? 'você' : 'amigo') + ' · ' + m.txt;
+    $('log').prepend(d);
+    if (!mine && m.t) $('tLat').textContent = 'Última jogada do amigo chegou em ~' + Math.max(0, lat) + ' ms (depende dos relógios dos aparelhos).';
+  });
+  offs = [() => room.off('value', onRoom), () => mv.off(), () => pres.remove()];
+}
+$('bPing').onclick = async () => {
+  const n = String(seen).padStart(4, '0');
+  sent++;
+  try { await db.ref('rooms/' + code + '/moves/' + n).set({ by: uid, t: Date.now(), txt: 'jogada de teste ' + sent }); }
+  catch (e) { fail('Não consegui enviar a jogada (talvez o outro enviou no mesmo instante; tente de novo).', e); }
+};
+$('bLeave').onclick = () => { offs.forEach(f => f()); sessionStorage.removeItem('pvp-room'); code = null; $('log').innerHTML = ''; seen = 0; show($('room'), false); show($('lobby'), true); };
+</script>
+</body>
+</html>
