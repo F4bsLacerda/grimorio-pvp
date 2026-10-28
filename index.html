@@ -2675,7 +2675,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
   };
   const LESSON_ORDER = ['objetivo', 'mana', 'criatura', 'fases', 'ataque', 'bloqueio', 'pilha', 'palavras'];
 
-  const S = load() || { mode: 'iniciante', level: 1, my: ['G'], aiMode: 'rand', ai: ['R'], tier: 'default', iniDeck: 'A' };
+  const S = load() || { mode: 'partida', level: 1, my: ['G'], aiMode: 'rand', ai: ['R'], tier: 'default', iniDeck: 'A' };
   if (S.iniDeck !== 'A' && S.iniDeck !== 'B') S.iniDeck = 'A';
   const INI = S.mode === 'iniciante';
   const isIni = () => !!(ui && ui.ini);                       // partida atual é do modo Iniciante
