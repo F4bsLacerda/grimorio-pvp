@@ -54,7 +54,9 @@
   <section class="card hide" id="room">
     <h2>Sala</h2>
     <div class="code" id="tCode">----</div>
-    <p class="sub" id="tShare">Mande este código para o seu amigo.</p>
+    <p class="sub" id="tShare">Mande o convite para o seu amigo.</p>
+    <div class="row" id="invite" style="justify-content:center"><button class="primary" id="bCopy">Copiar link do convite</button><button id="bShare" class="hide">Compartilhar…</button></div>
+    <p class="sub hide" id="tCopied" style="margin:0;color:var(--ok)">Link copiado! Cole no WhatsApp ou onde preferir.</p>
     <div class="players">
       <div class="pl"><b>Anfitrião</b><span class="st" style="justify-content:center"><span class="dot" id="dHost"></span><span id="tHost">—</span></span></div>
       <div class="pl"><b>Convidado</b><span class="st" style="justify-content:center"><span class="dot" id="dGuest"></span><span id="tGuest">aguardando…</span></span></div>
@@ -102,8 +104,10 @@ firebase.auth().onAuthStateChanged(u => {
   uid = u.uid;
   $('tConn').textContent = 'Conectado ao servidor.';
   $('bCreate').disabled = false; $('bJoin').disabled = false;
+  const inv = (new URLSearchParams(location.search).get('sala') || '').toUpperCase();
   const last = sessionStorage.getItem('pvp-room');
-  if (last) { const [c, r] = last.split(':'); enter(c, r); }
+  if (last && (!inv || last.startsWith(inv + ':'))) { const [c, r] = last.split(':'); enter(c, r); }
+  else if (/^[A-Z]{4}$/.test(inv)) { $('iCode').value = inv; $('bJoin').click(); }
 });
 
 const ABC = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
@@ -140,7 +144,10 @@ function enter(c, r) {
   code = c; role = r; sessionStorage.setItem('pvp-room', c + ':' + r);
   show($('lobby'), false); show($('room'), true); show($('err'), false);
   $('tCode').textContent = c;
-  $('tShare').textContent = r === 'host' ? 'Mande este código para o seu amigo.' : 'Você entrou como convidado.';
+  $('tShare').textContent = r === 'host' ? 'Mande o convite para o seu amigo.' : 'Você entrou como convidado.';
+  show($('invite'), r === 'host'); show($('tCopied'), false);
+  show($('bShare'), r === 'host' && !!navigator.share);
+  if (r === 'guest' && location.search) history.replaceState(null, '', location.pathname);
   const pres = db.ref('rooms/' + c + '/presence/' + uid);
   pres.set(true); pres.onDisconnect().remove();
   const room = db.ref('rooms/' + c);
@@ -167,6 +174,14 @@ $('bPing').onclick = async () => {
   try { await db.ref('rooms/' + code + '/moves/' + n).set({ by: uid, t: Date.now(), txt: 'jogada de teste ' + sent }); }
   catch (e) { fail('Não consegui enviar a jogada (talvez o outro enviou no mesmo instante; tente de novo).', e); }
 };
+const inviteURL = () => location.origin + location.pathname + '?sala=' + code;
+const inviteMsg = () => 'Bora um duelo no Grimório dos Reinos? Entre na minha sala: ' + inviteURL();
+$('bCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText(inviteURL()); }
+  catch (e) { const t = document.createElement('textarea'); t.value = inviteURL(); document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch (e2) {} t.remove(); }
+  show($('tCopied'), true); $('bCopy').textContent = 'Copiado ✓'; setTimeout(() => { $('bCopy').textContent = 'Copiar link do convite'; }, 2000);
+};
+$('bShare').onclick = () => navigator.share({ title: 'Grimório PvP', text: inviteMsg(), url: inviteURL() }).catch(() => {});
 $('bLeave').onclick = () => { offs.forEach(f => f()); sessionStorage.removeItem('pvp-room'); code = null; $('log').innerHTML = ''; seen = 0; show($('room'), false); show($('lobby'), true); };
 </script>
 </body>
