@@ -70,6 +70,12 @@ button:focus-visible, [tabindex]:focus-visible { outline: 2px solid var(--gold-h
 .setup { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 18px; }
 .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 12px; align-content: start; min-width: 0; }
 .box h2 { margin: 0; font-family: var(--f-name); font-weight: 700; font-size: 15px; letter-spacing: .08em; color: var(--gold); }
+.inibox { grid-column: span 2; }
+@media (max-width: 640px) { .inibox { grid-column: auto; } }
+.opt.inideck { display: flex; gap: 12px; align-items: center; }
+.iniav { width: 64px; height: 64px; flex: none; border-radius: 50%; object-fit: cover; border: 1px solid var(--line-2); display: inline-flex; align-items: center; justify-content: center; gap: 2px; background: var(--table-2); }
+.initx { display: grid; gap: 2px; min-width: 0; }
+.initx em { color: var(--gold-hi); font-style: normal; }
 .box .hint { color: var(--muted); font-size: 13.5px; margin: 0; }
 .seg { display: grid; gap: 8px; }
 .opt { text-align: left; border: 1px solid var(--line-2); background: var(--table); border-radius: 8px; padding: 10px 12px; cursor: pointer; display: grid; gap: 2px; }
@@ -336,6 +342,9 @@ button.zchip { cursor: pointer; } button.zchip:hover { border-color: var(--gold)
 .lrow { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; min-height: 62px; align-items: center; }
 .crow { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; align-content: center; align-items: center; min-height: 0; overflow-y: auto; padding: 8px 2px; scrollbar-width: thin; }
 .rempty, .lempty { font-family: var(--f-ui); font-size: 12.5px; color: var(--muted); opacity: .6; }
+.bprev { position: absolute; top: 50%; left: 6px; transform: translateY(-50%); width: min(300px, 36%); display: grid; gap: 2px; padding: 8px 12px; border-radius: 8px; background: rgba(18,20,25,.93); border: 1px solid #5b4a7a; font: 13px/1.35 var(--f-ui); color: var(--ink); z-index: 6; pointer-events: none; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+@media (max-width: 920px) { .midline { flex-wrap: wrap; } .bprev { position: static; transform: none; width: 100%; margin-top: 6px; } }
+.bprev b { color: var(--gold-hi); font-family: var(--f-name); letter-spacing: .04em; }
 .midline { position: relative; display: flex; justify-content: center; align-items: center; min-height: 34px; }
 .midline::before { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 1px; background: linear-gradient(90deg, transparent, var(--line-2), transparent); }
 .midpill { position: relative; display: inline-flex; gap: 10px; align-items: center; padding: 5px 16px; border-radius: 99px; background: #191c23; border: 1px solid var(--line-2); font-family: var(--f-ui); font-size: 13px; color: var(--muted); }
@@ -1114,6 +1123,35 @@ button.zc { cursor: pointer; } button.zc:hover { background: rgba(255,255,255,.0
   S2('sBG', 'Ciclo da Decomposição', 'BG', '3BG', 'sorcery', { k: 'seq', tgt: 'gyMine', list: [{ k: 'reanimate' }, { k: 'gain', n: 2 }] }, 'Ponha no campo uma criatura do seu cemitério. Ganhe 2 de vida.', 'tumulo');
   S2('sRG', 'Estouro Selvagem', 'RG', '1RG', 'instant', { k: 'pump', p: 3, t: 3, kw: ['atropelar', 'iniciativa'], tgt: 'creature' }, 'A criatura alvo ganha +3/+3, atropelar e iniciativa até o fim do turno.', 'punho');
 
+  // ---------------- INICIANTE (só nos decks fixos A e B; ficam fora dos decks normais) ----------------
+  const I = (id, name, color, cost, type, pt, kw, x, text, icon) => C(id, name, color, cost, type, pt, kw, 'C', Object.assign({ set: 'iniciante' }, x || {}), text, icon);
+  const IWU = x => Object.assign({ colors: ['W', 'U'] }, x || {}), IBR = x => Object.assign({ colors: ['B', 'R'] }, x || {});
+  // Deck A · Seshara (Branco e Azul): templo lunar, guardiões alados, justiça
+  I('iA01', 'Arqueira do Santuário', 'W', '1W', 'creature', [1, 3], ['alcance'], null, '', 'arco');
+  I('iA02', 'Guardiã do Templo Lunar', 'M', 'WU', 'creature', [2, 2], ['vigilancia'], IWU(), '', 'escudo');
+  I('iA03', 'Lanceiro da Esfinge', 'M', '1WU', 'creature', [3, 2], [], IWU(), '', 'lanca');
+  I('iA04', 'Grifo Sentinela', 'M', '1WU', 'creature', [2, 3], ['voar'], IWU(), '', 'grifo');
+  I('iA05', 'Sacerdotisa da Lua', 'M', '1WU', 'creature', [2, 2], [], IWU({ etb: { k: 'gain', n: 3 } }), 'Ao entrar: ganhe 3 de vida.', 'cruz');
+  I('iA06', 'Prece ao Luar', 'W', '1W', 'sorcery', null, [], { spell: { k: 'seq', list: [{ k: 'gain', n: 3 }, { k: 'draw', n: 1 }] } }, 'Ganhe 3 de vida e compre 1 carta.', 'estrela');
+  I('iA07', 'Sentença da Balança', 'M', '2WU', 'sorcery', null, [], IWU({ spell: { k: 'exile', tgt: 'creature' } }), 'Exile a criatura alvo.', 'balanca');
+  I('iA08', 'Lança Celeste', 'W', '1W', 'sorcery', null, [], { spell: { k: 'dmg', n: 3, tgt: 'creature' } }, 'Causa 3 de dano à criatura alvo.', 'raio');
+  I('iA09', 'Noviço do Templo', 'W', 'W', 'creature', [1, 2], ['vinculo'], null, '', 'vela');
+  // Deck B · Zarah (Preto e Vermelho): infernal, forja, cinzas e pactos
+  I('iB01', 'Morcego Infernal', 'B', '1B', 'creature', [1, 1], ['voar'], null, '', 'corvo');
+  I('iB02', 'Aranha das Cinzas', 'B', '1B', 'creature', [1, 3], ['alcance'], null, '', 'aranha');
+  I('iB03', 'Guardião da Fornalha', 'R', '1R', 'creature', [2, 2], ['vigilancia'], null, '', 'elmo');
+  I('iB04', 'Diabrete das Cinzas', 'M', 'BR', 'creature', [2, 1], [], IBR(), '', 'adaga');
+  I('iB05', 'Atiradora das Ruínas', 'M', '1BR', 'creature', [2, 1], [], IBR({ etb: { k: 'dmg', n: 1, tgt: 'creature' } }), 'Ao entrar: causa 1 de dano à criatura alvo.', 'besta');
+  I('iB06', 'Tentadora Infernal', 'M', '1BR', 'creature', [2, 2], [], IBR({ etb: { k: 'discard', n: 1 } }), 'Ao entrar: o oponente descarta 1 carta.', 'boca');
+  I('iB07', 'Brutamontes do Abismo', 'M', '2BR', 'creature', [3, 3], [], IBR({ etb: { k: 'dmg', n: 2, tgt: 'any' } }), 'Ao entrar: causa 2 de dano a qualquer alvo.', 'gigante');
+  I('iB08', 'Senhora das Brasas', 'M', '2BR', 'creature', [3, 3], ['voar'], IBR({ etb: { k: 'dmg', n: 2, tgt: 'creature' } }), 'Ao entrar: causa 2 de dano à criatura alvo.', 'dragao');
+  I('iB10', 'Pacto Infernal', 'B', '1B', 'sorcery', null, [], { spell: { k: 'seq', list: [{ k: 'draw', n: 2 }, { k: 'gain', n: -2 }] } }, 'Compre 2 cartas. Você perde 2 de vida.', 'calice');
+  // listas fixas: 18 mágicas + 6 terrenos básicos de cada cor = 30 cartas
+  const INI_DECKS = {
+    A: { nome: 'Deck A', cols: ['W', 'U'], cards: [['iA09', 1], ['w02', 2], ['iA01', 1], ['u02', 2], ['u03', 1], ['iA02', 2], ['iA03', 2], ['iA04', 1], ['iA05', 1], ['mWU', 1], ['iA08', 1], ['iA06', 1], ['iA07', 1], ['u14', 1]] },
+    B: { nome: 'Deck B', cols: ['B', 'R'], cards: [['r03', 2], ['iB01', 2], ['iB02', 1], ['iB03', 2], ['b04', 1], ['iB04', 2], ['iB05', 1], ['iB06', 1], ['iB07', 1], ['iB08', 1], ['b10', 1], ['iB10', 1], ['r14', 1], ['sBR', 1]] },
+  };
+
   // ---------------- TERRENOS ----------------
   const LANDS = {};
   for (const col of COLORS) {
@@ -1144,7 +1182,7 @@ button.zc { cursor: pointer; } button.zc:hover { background: rgba(255,255,255,.0
   let DUALS = 6, GOLD = 1;
   function buildDeck(colors, rng) {
     const ids = [];
-    const pool = c => CARDS.filter(x => x.color === c && x.type !== 'land');
+    const pool = c => CARDS.filter(x => x.color === c && x.type !== 'land' && !x.set);
     if (colors.length === 1) {
       const c = colors[0];
       for (const x of pool(c)) { ids.push(x.id); if (x.rarity === 'C') ids.push(x.id); }
@@ -1159,7 +1197,7 @@ button.zc { cursor: pointer; } button.zc:hover { background: rgba(255,255,255,.0
         for (let i = 0; i < 8 - DUALS / 2; i++) ids.push('L' + c);
       }
       for (let i = rares.length - 1; i > 0; i--) { const j = Math.floor(rng() * (i + 1)); [rares[i], rares[j]] = [rares[j], rares[i]]; }
-      const golds = GOLD ? CARDS.filter(x => x.color === 'M' && x.colors.join('') === key) : [];
+      const golds = GOLD ? CARDS.filter(x => x.color === 'M' && !x.set && x.colors.join('') === key) : [];
       if (golds.length) for (const x of golds) for (let i = 0; i < 2; i++) ids.push(x.id);
       else ids.push(...rares.slice(0, 4));
       for (let i = 0; i < DUALS; i++) ids.push('D' + pairKey(colors));
@@ -1168,7 +1206,13 @@ button.zc { cursor: pointer; } button.zc:hover { background: rgba(255,255,255,.0
   }
 
   G.MTG = G.MTG || {};
-  Object.assign(G.MTG, { COLORS, COLOR_INFO, KW_NAMES, CARDS, BY_ID, LANDS, parseCost, buildDeck, setDuals: n => { DUALS = n; }, setGold: n => { GOLD = n; } });
+  function buildIniDeck(key) {
+    const L = INI_DECKS[key], ids = [];
+    for (const [id, n] of L.cards) for (let i = 0; i < n; i++) ids.push(id);
+    for (const c of L.cols) for (let i = 0; i < 6; i++) ids.push('L' + c);
+    return ids;
+  }
+  Object.assign(G.MTG, { COLORS, COLOR_INFO, KW_NAMES, CARDS, BY_ID, LANDS, parseCost, buildDeck, INI_DECKS, buildIniDeck, setDuals: n => { DUALS = n; }, setGold: n => { GOLD = n; } });
 })(typeof window !== 'undefined' ? window : globalThis);
 
 /* Emblemas heráldicos das cartas — silhuetas simples em 64x64, cor = currentColor */
@@ -1650,7 +1694,7 @@ button.zc { cursor: pointer; } button.zc:hover { background: rgba(255,255,255,.0
           break;
         }
         case 'seiva': { const q = this.perm(eff.uid); if (q) { q.counters = (q.counters || 0) + 1; this.log(q.def.name + ' recebeu um marcador +1/+1.', p); } pl.life += 1; this.emit('life', { p, d: 1 }); break; }
-        case 'gain': pl.life += eff.n; this.log(pl.name + ' ganhou ' + eff.n + ' de vida.', p); this.emit('life', { p, d: eff.n }); break;
+        case 'gain': pl.life += eff.n; this.log(pl.name + (eff.n < 0 ? ' perdeu ' + (-eff.n) : ' ganhou ' + eff.n) + ' de vida.', p); this.emit('life', { p, d: eff.n }); break;
         case 'pump': {
           const q = this.targetPerm(item); if (!q) break;
           q.mods.push({ p: eff.p, t: eff.t, kw: eff.kw || [] });
@@ -1885,12 +1929,18 @@ button.zc { cursor: pointer; } button.zc:hover { background: rgba(255,255,255,.0
     /* ---------- partida ---------- */
     async setup() {
       for (const pl of this.players) this.shuffle(pl.library);
+      // Iniciante: as 7 primeiras cartas trazem 1 terreno básico de cada cor do deck
+      if (this.opts.iniciante) for (const pl of this.players) {
+        const cols = [...new Set(pl.library.filter(c => c.def.type === 'land').map(c => c.def.color))];
+        const fixed = cols.map(col => pl.library.splice(pl.library.findIndex(c => c.def.type === 'land' && c.def.color === col), 1)[0]);
+        pl.library = this.shuffle(fixed.concat(pl.library.splice(0, 7 - fixed.length))).concat(pl.library);
+      }
       this.active = this.opts.first != null ? this.opts.first : (this.rng() < 0.5 ? 0 : 1);
       this.log((this.players[this.active].name) + ' começa a partida.', this.active);
       for (let i = 0; i < 2; i++) {
         const pl = this.players[i];
         await this.draw(i, 7);
-        while (pl.mulls < 3) {
+        while (!this.opts.iniciante && pl.mulls < 3) {
           this.emit('change');
           const keep = await this.agents[i].chooseMulligan(this, i, pl.mulls);
           if (keep) break;
@@ -2560,7 +2610,7 @@ button.zc { cursor: pointer; } button.zc:hover { background: rgba(255,255,255,.0
 window.BALANCE_NOTE = '';
 window.BALANCE = {"games":84000,"perPair":800,"deck":{"W":0.5032589285714286,"U":0.49973214285714285,"B":0.4903571428571428,"R":0.5113392857142856,"G":0.4987499999999999,"WU":0.4930357142857143,"WB":0.4905803571428571,"WR":0.4983928571428572,"WG":0.48973214285714284,"UB":0.5113392857142857,"UR":0.5118750000000001,"UG":0.4942857142857142,"BR":0.5139732142857143,"BG":0.5058482142857142,"RG":0.48750000000000004},"pair":{"W|U":0.5625,"W|B":0.4275,"W|R":0.426875,"W|G":0.599375,"W|WU":0.5800000000000001,"W|WB":0.455625,"W|WR":0.531875,"W|WG":0.5606249999999999,"W|UB":0.51625,"W|UR":0.405,"W|UG":0.56125,"W|BR":0.39,"W|BG":0.49375,"W|RG":0.5349999999999999,"U|B":0.635,"U|R":0.52,"U|G":0.45125,"U|WU":0.51625,"U|WB":0.52625,"U|WR":0.4775,"U|WG":0.415,"U|UB":0.39749999999999996,"U|UR":0.5725,"U|UG":0.42,"U|BR":0.5625,"U|BG":0.5687500000000001,"U|RG":0.49624999999999997,"B|R":0.4275,"B|G":0.5725,"B|WU":0.435,"B|WB":0.6212500000000001,"B|WR":0.47750000000000004,"B|WG":0.59625,"B|UB":0.44875,"B|UR":0.38625,"B|UG":0.45625000000000004,"B|BR":0.50625,"B|BG":0.51,"B|RG":0.49,"R|G":0.400625,"R|WU":0.5237499999999999,"R|WB":0.56125,"R|WR":0.5325,"R|WG":0.5025,"R|UB":0.51625,"R|UR":0.51,"R|UG":0.48750000000000004,"R|BR":0.4875,"R|BG":0.53,"R|RG":0.48124999999999996,"G|WU":0.5037499999999999,"G|WB":0.38625,"G|WR":0.506875,"G|WG":0.50875,"G|UB":0.5037499999999999,"G|UR":0.5800000000000001,"G|UG":0.51125,"G|BR":0.52,"G|BG":0.44625000000000004,"G|RG":0.5393749999999999,"WU|WB":0.4575,"WU|WR":0.50625,"WU|WG":0.44499999999999995,"WU|UB":0.495,"WU|UR":0.52625,"WU|UG":0.495,"WU|BR":0.46125000000000005,"WU|BG":0.575,"WU|RG":0.5,"WB|WR":0.50875,"WB|WG":0.5925,"WB|UB":0.425,"WB|UR":0.4075,"WB|UG":0.59,"WB|BR":0.3975,"WB|BG":0.4175,"WB|RG":0.5375000000000001,"WR|WG":0.49375,"WR|UB":0.54625,"WR|UR":0.47875,"WR|UG":0.53125,"WR|BR":0.499375,"WR|BG":0.45375,"WR|RG":0.515625,"WG|UB":0.49249999999999994,"WG|UR":0.5587500000000001,"WG|UG":0.5525,"WG|BR":0.4225,"WG|BG":0.39437500000000003,"WG|RG":0.55,"UB|UR":0.4925,"UB|UG":0.4975,"UB|BR":0.48750000000000004,"UB|BG":0.5325,"UB|RG":0.49,"UR|UG":0.48875,"UR|BR":0.54,"UR|BG":0.57125,"UR|RG":0.48375,"UG|BR":0.50625,"UG|BG":0.48124999999999996,"UG|RG":0.5237499999999999,"BR|BG":0.47625,"BR|RG":0.5,"BG|RG":0.5325},"first":"51,8","mill":"1,0","worst":"Azul vence Preto em 63,5%","l1":"32% e 66%","l1v2":"31"};
 window.PVP_FIREBASE = {"apiKey":"AIzaSyBBi43orSuRZA-CY-ON0dph-wiApHAnpF0","authDomain":"grimorio-pvp.firebaseapp.com","databaseURL":"https://grimorio-pvp-default-rtdb.firebaseio.com","projectId":"grimorio-pvp","storageBucket":"grimorio-pvp.firebasestorage.app","messagingSenderId":"924954383867","appId":"1:924954383867:web:f98e095cef8d2a0985a75e"};
-window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg","u05":"u05.jpg","u06":"u06.jpg","u07":"u07.jpg","u08":"u08.jpg","u09":"u09.jpg","u10":"u10.jpg","u11":"u11.jpg","u12":"u12.jpg","u13":"u13.jpg","u14":"u14.jpg","g01":"g01.jpg","g02":"g02.jpg","g03":"g03.jpg","g04":"g04.jpg","g05":"g05.jpg","g06":"g06.jpg","g07":"g07.jpg","g08":"g08.jpg","g09":"g09.jpg","g10":"g10.jpg","g11":"g11.jpg","g12":"g12.jpg","g13":"g13.jpg","g14":"g14.jpg","r01":"r01.jpg","r02":"r02.jpg","r03":"r03.jpg","r04":"r04.jpg","r05":"r05.jpg","r06":"r06.jpg","r07":"r07.jpg","r08":"r08.jpg","r09":"r09.jpg","r10":"r10.jpg","r11":"r11.jpg","r12":"r12.jpg","r13":"r13.jpg","r14":"r14.jpg","b01":"b01.jpg","b02":"b02.jpg","b03":"b03.jpg","b04":"b04.jpg","b05":"b05.jpg","b06":"b06.jpg","b07":"b07.jpg","b08":"b08.jpg","b09":"b09.jpg","b10":"b10.jpg","b11":"b11.jpg","b12":"b12.jpg","b13":"b13.jpg","b14":"b14.jpg","w01":"w01.jpg","w02":"w02.jpg","w03":"w03.jpg","w04":"w04.jpg","w05":"w05.jpg","w06":"w06.jpg","w07":"w07.jpg","w08":"w08.jpg","w09":"w09.jpg","w10":"w10.jpg","w11":"w11.jpg","w12":"w12.jpg","w13":"w13.jpg","w14":"w14.jpg","mWU":"mWU.jpg","mWB":"mWB.jpg","mWR":"mWR.jpg","mWG":"mWG.jpg","mUB":"mUB.jpg","mUR":"mUR.jpg","mUG":"mUG.jpg","mBR":"mBR.jpg","mBG":"mBG.jpg","mRG":"mRG.jpg","sWU":"sWU.jpg","sWB":"sWB.jpg","sWR":"sWR.jpg","sWG":"sWG.jpg","sUB":"sUB.jpg","sUR":"sUR.jpg","sUG":"sUG.jpg","sBR":"sBR.jpg","sBG":"sBG.jpg","sRG":"sRG.jpg","LW":"LW.jpg","LU":"LU.jpg","LB":"LB.jpg","LR":"LR.jpg","LG":"LG.jpg","DWU":"DWU.jpg","DWB":"DWB.jpg","DWR":"DWR.jpg","DWG":"DWG.jpg","DUB":"DUB.jpg","DUR":"DUR.jpg","DUG":"DUG.jpg","DBR":"DBR.jpg","DBG":"DBG.jpg","DRG":"DRG.jpg","AV_W":"AV_W.jpg","AV_U":"AV_U.jpg","AV_B":"AV_B.jpg","AV_R":"AV_R.jpg","AV_G":"AV_G.jpg","AV_WU":"AV_WU.jpg","AV_WB":"AV_WB.jpg","AV_WR":"AV_WR.jpg","AV_WG":"AV_WG.jpg","AV_UB":"AV_UB.jpg","AV_UR":"AV_UR.jpg","AV_UG":"AV_UG.jpg","AV_BR":"AV_BR.jpg","AV_BG":"AV_BG.jpg","AV_RG":"AV_RG.jpg","UI_VITORIA":"ui_vitoria.png","UI_DERROTA":"ui_derrota.png","UI_BOTAO":"ui_botao.png","UI_FUNDO_VITORIA":"ui_fundo_vitoria.jpg","UI_FUNDO_DERROTA":"ui_fundo_derrota.jpg","UI_FX_IMPACTO":"ui_fx_impacto.jpg","UI_FX_PROJ_R":"ui_fx_proj_r.jpg","UI_FX_PROJ_B":"ui_fx_proj_b.jpg","UI_FX_PROJ_W":"ui_fx_proj_w.jpg","UI_FX_PROJ_U":"ui_fx_proj_u.jpg","UI_FX_PROJ_G":"ui_fx_proj_g.jpg","UI_VERSO":"ui_verso.jpg"};
+window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg","u05":"u05.jpg","u06":"u06.jpg","u07":"u07.jpg","u08":"u08.jpg","u09":"u09.jpg","u10":"u10.jpg","u11":"u11.jpg","u12":"u12.jpg","u13":"u13.jpg","u14":"u14.jpg","g01":"g01.jpg","g02":"g02.jpg","g03":"g03.jpg","g04":"g04.jpg","g05":"g05.jpg","g06":"g06.jpg","g07":"g07.jpg","g08":"g08.jpg","g09":"g09.jpg","g10":"g10.jpg","g11":"g11.jpg","g12":"g12.jpg","g13":"g13.jpg","g14":"g14.jpg","r01":"r01.jpg","r02":"r02.jpg","r03":"r03.jpg","r04":"r04.jpg","r05":"r05.jpg","r06":"r06.jpg","r07":"r07.jpg","r08":"r08.jpg","r09":"r09.jpg","r10":"r10.jpg","r11":"r11.jpg","r12":"r12.jpg","r13":"r13.jpg","r14":"r14.jpg","b01":"b01.jpg","b02":"b02.jpg","b03":"b03.jpg","b04":"b04.jpg","b05":"b05.jpg","b06":"b06.jpg","b07":"b07.jpg","b08":"b08.jpg","b09":"b09.jpg","b10":"b10.jpg","b11":"b11.jpg","b12":"b12.jpg","b13":"b13.jpg","b14":"b14.jpg","w01":"w01.jpg","w02":"w02.jpg","w03":"w03.jpg","w04":"w04.jpg","w05":"w05.jpg","w06":"w06.jpg","w07":"w07.jpg","w08":"w08.jpg","w09":"w09.jpg","w10":"w10.jpg","w11":"w11.jpg","w12":"w12.jpg","w13":"w13.jpg","w14":"w14.jpg","mWU":"mWU.jpg","mWB":"mWB.jpg","mWR":"mWR.jpg","mWG":"mWG.jpg","mUB":"mUB.jpg","mUR":"mUR.jpg","mUG":"mUG.jpg","mBR":"mBR.jpg","mBG":"mBG.jpg","mRG":"mRG.jpg","sWU":"sWU.jpg","sWB":"sWB.jpg","sWR":"sWR.jpg","sWG":"sWG.jpg","sUB":"sUB.jpg","sUR":"sUR.jpg","sUG":"sUG.jpg","sBR":"sBR.jpg","sBG":"sBG.jpg","sRG":"sRG.jpg","LW":"LW.jpg","LU":"LU.jpg","LB":"LB.jpg","LR":"LR.jpg","LG":"LG.jpg","DWU":"DWU.jpg","DWB":"DWB.jpg","DWR":"DWR.jpg","DWG":"DWG.jpg","DUB":"DUB.jpg","DUR":"DUR.jpg","DUG":"DUG.jpg","DBR":"DBR.jpg","DBG":"DBG.jpg","DRG":"DRG.jpg","AV_W":"AV_W.jpg","AV_U":"AV_U.jpg","AV_B":"AV_B.jpg","AV_R":"AV_R.jpg","AV_G":"AV_G.jpg","AV_WU":"AV_WU.jpg","AV_WB":"AV_WB.jpg","AV_WR":"AV_WR.jpg","AV_WG":"AV_WG.jpg","AV_UB":"AV_UB.jpg","AV_UR":"AV_UR.jpg","AV_UG":"AV_UG.jpg","AV_BR":"AV_BR.jpg","AV_BG":"AV_BG.jpg","AV_RG":"AV_RG.jpg","UI_VITORIA":"ui_vitoria.png","UI_DERROTA":"ui_derrota.png","UI_BOTAO":"ui_botao.png","UI_FUNDO_VITORIA":"ui_fundo_vitoria.jpg","UI_FUNDO_DERROTA":"ui_fundo_derrota.jpg","UI_FX_IMPACTO":"ui_fx_impacto.jpg","UI_FX_PROJ_R":"ui_fx_proj_r.jpg","UI_FX_PROJ_B":"ui_fx_proj_b.jpg","UI_FX_PROJ_W":"ui_fx_proj_w.jpg","UI_FX_PROJ_U":"ui_fx_proj_u.jpg","UI_FX_PROJ_G":"ui_fx_proj_g.jpg","UI_VERSO":"ui_verso.jpg","iA01":"iA01.jpg","iA02":"iA02.jpg","iA03":"iA03.jpg","iA04":"iA04.jpg","iA05":"iA05.jpg","iA06":"iA06.jpg","iA07":"iA07.jpg","iA08":"iA08.jpg","iA09":"iA09.jpg","iB01":"iB01.jpg","iB02":"iB02.jpg","iB03":"iB03.jpg","iB04":"iB04.jpg","iB05":"iB05.jpg","iB06":"iB06.jpg","iB07":"iB07.jpg","iB08":"iB08.jpg","iB10":"iB10.jpg"};
 </script>
 <script>
 /* ============================================================
@@ -2625,7 +2675,12 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
   };
   const LESSON_ORDER = ['objetivo', 'mana', 'criatura', 'fases', 'ataque', 'bloqueio', 'pilha', 'palavras'];
 
-  const S = load() || { mode: 'aprendiz', level: 1, my: ['G'], aiMode: 'rand', ai: ['R'], tier: 'default' };
+  const S = load() || { mode: 'iniciante', level: 1, my: ['G'], aiMode: 'rand', ai: ['R'], tier: 'default', iniDeck: 'A' };
+  if (S.iniDeck !== 'A' && S.iniDeck !== 'B') S.iniDeck = 'A';
+  const INI = S.mode === 'iniciante';
+  const isIni = () => !!(ui && ui.ini);                       // partida atual é do modo Iniciante
+  const curLevel = () => (ui && ui.level) || S.level;         // Iniciante joga sempre contra o Instrutor
+  const myCols = () => (ui && ui.myCols) || S.my;
   function load() { try { const v = JSON.parse(localStorage.getItem('grimorio-cfg') || 'null'); return v && v.my ? v : null; } catch (e) { return null; } }
   function save() { try { localStorage.setItem('grimorio-cfg', JSON.stringify(S)); } catch (e) { } }
 
@@ -2705,7 +2760,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     screen = 'gallery';
     const can = !!(assetsApi && dbApi);
     const n = Object.keys(ART).length;
-    const groups = [...M.COLORS.map(c => [M.COLOR_INFO[c].nome, M.CARDS.filter(x => x.color === c && x.type !== 'land')]), ['Multicoloridas', M.CARDS.filter(x => x.color === 'M')], ['Terrenos', M.CARDS.filter(x => x.type === 'land')]];
+    const groups = [...M.COLORS.map(c => [M.COLOR_INFO[c].nome, M.CARDS.filter(x => x.color === c && x.type !== 'land' && !x.set)]), ['Multicoloridas', M.CARDS.filter(x => x.color === 'M' && !x.set)], ['Iniciante · Deck A', M.CARDS.filter(x => x.set === 'iniciante' && x.id[1] === 'A')], ['Iniciante · Deck B', M.CARDS.filter(x => x.set === 'iniciante' && x.id[1] === 'B')], ['Terrenos', M.CARDS.filter(x => x.type === 'land')]];
     const fake = d => ({ uid: 'g-' + d.id, def: d });
     root.innerHTML = '<div class="start gallery"><header class="brand"><h1 style="font-size:clamp(36px,7vw,60px)">Artes das cartas</h1>'
       + '<p>' + n + ' de ' + M.CARDS.length + ' cartas com arte. Cartas sem imagem usam o emblema.' + (can ? ' Envie PNG, JPG ou WebP, de preferência quadrado: a imagem é reduzida para 768 px e fica salva no jogo para quem abrir.' : ' Só quem pode editar este artefato envia imagens.') + '</p>'
@@ -2731,7 +2786,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
   }
   const TYPE = { creature: 'Criatura', instant: 'Instantâneo', sorcery: 'Feitiço', enchantment: 'Encantamento', land: 'Terreno' };
   function frameClass(d) { return d.type === 'land' ? (d.colors ? 'M' : d.color) : d.color; }
-  function oppName() { return ui && ui.pvp ? ui.pvp.oppName : LEVELS[S.level].nome; }
+  function oppName() { return ui && ui.pvp ? ui.pvp.oppName : LEVELS[curLevel()].nome; }
   function colorNames(cs) { return cs.map(c => M.COLOR_INFO[c].nome).join(' e '); }
 
   function cardMarkup(c, o) {
@@ -2790,7 +2845,11 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     root.innerHTML = '<div class="start">'
       + '<header class="brand"><h1>Grimório dos Reinos</h1><p>Um duelo de cartas medieval com as regras de Magic: terrenos, mana, pilha e combate. 70 cartas originais em cinco cores. Treino contra o computador.</p></header>'
       + '<div class="setup">'
-      + '<section class="box"><h2>ADVERSÁRIO</h2><div class="seg">' + lvl + '</div>'
+      + '<section class="box"><h2>MODO</h2><div class="seg">'
+      + '<button class="opt" data-act="mode" data-v="iniciante" aria-pressed="' + (S.mode === 'iniciante') + '"><b>Iniciante</b><span>Primeira vez? Dois decks prontos e mais simples para aprender mana e combate, contra o Instrutor.</span></button>'
+      + '<button class="opt" data-act="mode" data-v="partida" aria-pressed="' + (S.mode !== 'iniciante') + '"><b>Treino livre</b><span>Escolha suas cores e o nível do computador.</span></button>'
+      + '</div></section>'
+      + (S.mode === 'iniciante' ? iniSetup() : '<section class="box"><h2>ADVERSÁRIO</h2><div class="seg">' + lvl + '</div>'
       + (S.level === 3 ? '<div class="seg"><p class="hint">Ritmo das minhas decisões:</p><div class="row">'
         + '<button class="opt" data-act="tier" data-v="default" aria-pressed="' + (S.tier === 'default') + '" style="flex:1"><b>Pensativo</b><span>Joga melhor; alguns segundos por decisão.</span></button>'
         + '<button class="opt" data-act="tier" data-v="quick" aria-pressed="' + (S.tier === 'quick') + '" style="flex:1"><b>Rápido</b><span>Responde quase na hora; joga mais simples.</span></button>'
@@ -2801,12 +2860,26 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       + '<button class="opt" data-act="aimode" data-v="rand" aria-pressed="' + (S.aiMode === 'rand') + '" style="flex:1"><b>Sortear</b><span>1 ou 2 cores ao acaso.</span></button>'
       + '<button class="opt" data-act="aimode" data-v="pick" aria-pressed="' + (S.aiMode === 'pick') + '" style="flex:1"><b>Escolher</b><span>Você define.</span></button></div>'
       + (S.aiMode === 'pick' ? '<div class="colors">' + chips(S.ai, 'ai') + '</div><div class="cdesc">' + blurb(S.ai) + '</div>' : '')
-      + '</section>'
+      + '</section>')
       + '</div>'
       + '<div class="startfoot"><button class="balance linkbtn" data-act="balance">' + BALANCE_NOTE + ' Ver relatório</button><div class="row"><button class="btn ghost" data-act="pvback">Voltar</button><button class="btn ghost" data-act="rules">Como jogar</button><button class="btn primary" data-act="start">Começar partida</button></div></div>'
       + '</div>';
   }
   const BALANCE_NOTE = window.BALANCE_NOTE || '';
+  const INI_INFO = {
+    A: { tema: 'Templo lunar: criaturas que voam e vigiam, compra de cartas e vida.', dica: 'Recomendado para a primeira partida.' },
+    B: { tema: 'Forja infernal: dano direto, descarte e criaturas agressivas.', dica: '' },
+  };
+  function iniSetup() {
+    const card = k => {
+      const D = M.INI_DECKS[k], av = ART['AV_' + avKey(D.cols)];
+      return '<button class="opt inideck" data-act="ini" data-v="' + k + '" aria-pressed="' + (S.iniDeck === k) + '">'
+        + (av ? '<img class="iniav" src="art/' + av + '" alt="" decoding="async"' + (AVPOS[avKey(D.cols)] ? ' style="object-position:' + AVPOS[avKey(D.cols)] + '"' : '') + '>' : '<span class="iniav emb">' + D.cols.map(c => pip(c)).join('') + '</span>')
+        + '<span class="initx"><b>' + D.nome + ' · ' + esc(avName(D.cols)) + '</b><span>' + colorNames(D.cols) + '. ' + INI_INFO[k].tema + (INI_INFO[k].dica ? ' <em>' + INI_INFO[k].dica + '</em>' : '') + '</span></span></button>';
+    };
+    return '<section class="box inibox"><h2>ESCOLHA SEU DECK</h2><div class="seg">' + card('A') + card('B') + '</div>'
+      + '<p class="hint">Seu oponente fica com o outro deck e joga no nível Instrutor, explicando cada jogada. Cada deck tem 30 cartas, sem instantâneas; a mão inicial sempre traz um terreno de cada cor.</p></section>';
+  }
 
   /* ============================================================
      PARTIDA
@@ -2820,12 +2893,14 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     save();
     ui = newUI(); screen = 'game';
     const rng = Math.random;
-    let aiCols = S.aiMode === 'pick' && S.ai.length ? S.ai.slice() : null;
+    const ini = S.mode === 'iniciante', iniOpp = S.iniDeck === 'A' ? 'B' : 'A';
+    let aiCols = ini ? M.INI_DECKS[iniOpp].cols.slice() : S.aiMode === 'pick' && S.ai.length ? S.ai.slice() : null;
     if (!aiCols) { const pool = M.COLORS.slice().sort(() => rng() - .5); aiCols = rng() < .5 ? [pool[0]] : [pool[0], pool[1]]; }
     ui.aiCols = aiCols;
+    if (ini) { ui.ini = true; ui.level = 1; ui.myCols = M.INI_DECKS[S.iniDeck].cols.slice(); }
     const human = humanAgent();
     let opp;
-    if (S.level === 3) {
+    if (curLevel() === 3) {
       opp = M.makeClaudeAgent({
         tier: S.tier,
         onSay: t => say('Claude', t, 'claude'),
@@ -2836,22 +2911,22 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
           if (s === 'falha') say('Sistema', 'Uma consulta falhou. Esta decisão foi tomada pelo motor Cavaleiro.', 'sys');
         },
       });
-    } else opp = AI.makeAgent(S.level, { onSay: S.level === 1 ? (t, kind) => say('Instrutor', t, 'inst') : null });
+    } else opp = AI.makeAgent(curLevel(), { onSay: curLevel() === 1 ? (t, kind) => say('Instrutor', t, 'inst') : null });
     const seed = (Math.random() * 1e9) | 0;
     g = new M.Game({
-      decks: [M.buildDeck(S.my, M.mulberry32(seed)), M.buildDeck(aiCols, M.mulberry32(seed + 1))],
-      agents: [human, opp], names: ['Você', oppName()], seed,
+      decks: ini ? [M.buildIniDeck(S.iniDeck), M.buildIniDeck(iniOpp)] : [M.buildDeck(S.my, M.mulberry32(seed)), M.buildDeck(aiCols, M.mulberry32(seed + 1))],
+      agents: [human, opp], names: ['Você', oppName()], seed, iniciante: ini,
       onEvent, pace,
     });
     render(); window.scrollTo(0, 0);
-    if (S.mode === 'aprendiz' && M.Advisor) {
-      ui.advisor = M.Advisor.create({ name: avName(S.my) || 'Conselheira', tier: 'default', onBusy: b => { ui.advBusy = b; render(); } });
-      advSay('Olá! Vou acompanhar você nesta partida e dizer o que eu faria em cada decisão. Siga ou não: no fim, mostro o que aprendemos.');
+    if ((S.mode === 'aprendiz' || ini) && M.Advisor) {
+      ui.advisor = M.Advisor.create({ name: avName(myCols()) || 'Conselheira', tier: 'default', iniciante: ini, onBusy: b => { ui.advBusy = b; render(); } });
+      advSay(ini ? 'Olá! Esta é uma partida para aprender. Vou ajudar você em duas coisas: escolher qual terreno baixar e decidir quando vale a pena trocar criaturas no combate.' : 'Olá! Vou acompanhar você nesta partida e dizer o que eu faria em cada decisão. Siga ou não: no fim, mostro o que aprendemos.');
       const gg = g;
-      ui.advisor.briefing(g, HUMAN, S.my, aiCols).then(t => { if (g === gg && t) advSay(t, 'Briefing'); });
+      ui.advisor.briefing(g, HUMAN, myCols(), aiCols).then(t => { if (g === gg && t) advSay(t, 'Briefing'); });
     }
-    if (S.level === 1) say('Instrutor', 'Olá! Vou jogar com ' + colorNames(aiCols).toLowerCase() + ' e explicar minhas jogadas. Você está com ' + colorNames(S.my).toLowerCase() + '.', 'inst');
-    if (S.level === 3) say('Claude', 'Boa partida! Estou com ' + colorNames(aiCols).toLowerCase() + '. Vou pensar a cada turno, então pode levar alguns segundos.', 'claude');
+    if (curLevel() === 1) say('Instrutor', 'Olá! Vou jogar com ' + colorNames(aiCols).toLowerCase() + ' e explicar minhas jogadas. Você está com ' + colorNames(myCols()).toLowerCase() + '.', 'inst');
+    if (curLevel() === 3) say('Claude', 'Boa partida! Estou com ' + colorNames(aiCols).toLowerCase() + '. Vou pensar a cada turno, então pode levar alguns segundos.', 'claude');
     g.run().catch(e => { console.error(e); toast('Erro no jogo: ' + (e && e.message)); });
   }
 
@@ -2878,6 +2953,12 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     if (type === 'phase' && S.mode === 'aprendiz') {
       if (g.active === HUMAN && d.phase === 'principal1') lesson('mana');
       if (g.active === HUMAN && d.phase === 'final') lesson('fases');
+    }
+    if (type === 'change' && isIni()) {
+      for (const q of g.battlefield) for (const k of (q.def.type === 'creature' ? g.kws(q) : [])) {
+        if (ui.seen.has('kw:' + k)) continue; ui.seen.add('kw:' + k);
+        ui.chat.push({ from: 'Nova regra · ' + KWN[k], text: q.def.name + ' tem ' + KWN[k] + '. ' + KW_HELP[k], kind: 'lesson' });
+      }
     }
     if (type === 'change' && S.mode === 'aprendiz') {
       if (g.battlefield.some(q => q.def.type === 'creature' && q.def.kw.length)) lesson('palavras');
@@ -3033,6 +3114,19 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     if (!t) return;
     if (ui.pending && ui.pending.type === 'priority') finish({ type: 'act', uid, target: t });
   }
+  /* Iniciante: explica se falta quantidade de mana ou uma cor específica */
+  function missingColors(p, d) {
+    const src = g.manaSources(p); if (src.length < d.cmc) return null;
+    const have = {}; for (const s of src) for (const c of s.colors) have[c] = (have[c] || 0) + 1;
+    return M.COLORS.filter(c => (d.cost.c[c] || 0) > (have[c] || 0));
+  }
+  function manaWhy(p, d) {
+    const free = g.manaSources(p).length;
+    if (free < d.cmc) return 'Mana insuficiente: esta carta custa ' + d.cmc + ' e você tem ' + free + ' mana livre.';
+    const miss = missingColors(p, d);
+    if (miss && miss.length) return 'Falta mana ' + miss.map(c => M.COLOR_INFO[c].nome.toLowerCase()).join(' e ') + ': você tem ' + free + ' mana livre, mas esta carta pede essa cor. Baixe um terreno dessa cor quando puder.';
+    return '';
+  }
   function whyNot(c) {
     const d = c.def, p = HUMAN;
     if (!ui.pending || ui.pending.type !== 'priority') return 'Aguarde: agora não é sua vez de agir.';
@@ -3042,7 +3136,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       return '';
     }
     if (d.type !== 'instant' && !g.sorcerySpeed(p)) return TYPE[d.type] + ': só na sua fase principal, com a pilha vazia.';
-    if (!g.canPay(p, d.cost)) return 'Mana insuficiente: faltam terrenos desvirados das cores certas.';
+    if (!g.canPay(p, d.cost)) return (isIni() && manaWhy(p, d)) || 'Mana insuficiente: faltam terrenos desvirados das cores certas.';
     if (d.spell && d.spell.tgt && !g.legalTargets(p, d.spell.tgt, c).length) return 'Não há alvo válido agora.';
     return '';
   }
@@ -3295,7 +3389,10 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
         if (q.controller === HUMAN && q.def.type === 'creature' && !q.tapped) {
           o.selectable = true;
           if (ui.blockSel === q.uid) o.selected = true;
-          if (ui.blockMap[q.uid] != null) { const a = g.perm(ui.blockMap[q.uid]); o.badge = 'bloqueia ' + (a ? a.def.name.split(' ')[0] : ''); o.badgeCls = 'blk'; }
+          if (ui.blockMap[q.uid] != null) {
+            const a = g.perm(ui.blockMap[q.uid]); o.badge = 'bloqueia ' + (a ? a.def.name.split(' ')[0] : ''); o.badgeCls = 'blk';
+            if (isIni() && a) { const bs = Object.keys(ui.blockMap).filter(u => ui.blockMap[u] === a.uid).map(u => g.perm(+u)).filter(Boolean); o.badge += blockOutcome(a, bs).dead.has(q.uid) ? ' · morre' : ' · sobrevive'; }
+          }
         }
         if (q.attacking && ui.blockSel != null && g.canBlockAttacker(g.perm(ui.blockSel), q)) o.selectable = true;
       }
@@ -3371,6 +3468,10 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     const hand = me.hand.map((c, i) => {
       const o = { size: 'hand', info: false, k: true };
       if (pend && pend.type === 'priority' && !tgtMode && !whyNot(c)) o.playable = true;
+      else if (isIni() && pend && pend.type === 'priority' && !tgtMode && c.def.type !== 'land' && g.sorcerySpeed(HUMAN)) {
+        const miss = missingColors(HUMAN, c.def);
+        if (miss && miss.length) o.badge = 'falta ' + miss.map(k => M.COLOR_INFO[k].nome.toLowerCase()).join(' e ');
+      }
       if (tgtMode || ui.mode === 'attack' || ui.mode === 'block') o.dim = true;
       const off = i - (n - 1) / 2;
       return '<div class="fan" style="--r:' + (off * 2.2).toFixed(1) + 'deg;--y:' + (Math.abs(off) * 3).toFixed(0) + 'px;z-index:' + (i + 1) + '">' + cardMarkup(c, o) + '</div>';
@@ -3378,26 +3479,26 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     const lessonBox = ui.lesson ? '<div class="banner" role="status"><b style="font-family:var(--f-name);color:var(--gold-hi)">Lição ' + ui.lesson.n + ' de 8 · ' + esc(ui.lesson.t) + '</b><span style="flex:1 1 280px">' + esc(ui.lesson.body) + '</span><button class="btn small primary" data-act="lessonok">Entendi</button></div>' : '';
     const tipBox = ui.tipNow ? '<div class="banner" style="border-color:#3d6a43;background:#1d2a1f"><b style="color:var(--ok);font-family:var(--f-name)">Dica</b><span style="flex:1 1 240px">' + esc(ui.tipNow) + '</span><button class="btn small" data-act="tipok">Ok</button></div>' : '';
     const think = ui.thinking ? '<div class="thinking">Claude está pensando…</div>' : '';
-    const sayLine = ui.lastSay && S.level !== 2 ? '<div class="say">“' + esc(ui.lastSay) + '”</div>' : '';
+    const sayLine = ui.lastSay && curLevel() !== 2 ? '<div class="say">“' + esc(ui.lastSay) + '”</div>' : '';
     const unread = ui.chat.length - (ui.chatSeen || 0);
     const keep = captureScroll();
     const before = FX.on ? snapshot() : null;
     root.innerHTML = '<div class="table">'
       + '<aside class="lcol duel">'
-      + '<section class="pblock opp">' + avatar(OPP, ui.aiCols, oppName(), colorNames(ui.aiCols) + (ui.pvp ? ' · amigo' : ' · nível ' + S.level))
+      + '<section class="pblock opp">' + avatar(OPP, ui.aiCols, oppName(), colorNames(ui.aiCols) + (ui.pvp ? ' · amigo' : ' · nível ' + curLevel()))
       + '<div class="ohand" title="Cartas na mão do oponente" aria-label="' + op.hand.length + ' cartas na mão do oponente">' + op.hand.map(() => '<span class="cback"></span>').join('') + '<span class="hcount">' + op.hand.length + '</span></div>' + zones(OPP) + think + sayLine + '</section>'
       + '<div class="engr" aria-hidden="true"></div>'
       + manaBox
       + '<div class="engr" aria-hidden="true"></div>'
-      + '<section class="pblock me">' + zones(HUMAN) + avatar(HUMAN, S.my, 'Você', colorNames(S.my)) + '</section>'
+      + '<section class="pblock me">' + zones(HUMAN) + avatar(HUMAN, myCols(), 'Você', colorNames(myCols())) + '</section>'
       + '</aside>'
       + '<main class="ccol">'
       + '<div class="battle ' + (g.active === HUMAN ? 'turn-me' : 'turn-opp') + '">'
       + '<div class="edge opp"><div class="lrow opp">' + landsMarkup(OPP) + '</div><div class="fav">' + avatar(OPP, ui.aiCols, oppName(), '') + '</div><div class="piles">' + handBacks(op.hand.length) + pileHTML(op.library.length, 'Grimório do oponente') + '</div></div>'
       + '<div class="crow opp" aria-label="Criaturas do oponente">' + row(OPP) + '</div>'
-      + mid
+      + (isIni() && ui.mode === 'block' ? (l => l.length ? mid.replace(/<\/div>$/, '<div class="bprev" role="status"><b>Se confirmar agora:</b>' + l.map(x => '<span>' + esc(x) + '</span>').join('') + '</div></div>') : mid)(blockPreview()) : mid)
       + '<div class="crow me" aria-label="Suas criaturas">' + row(HUMAN) + '</div>'
-      + '<div class="edge me"><div class="lrow me">' + landsMarkup(HUMAN) + '</div><div class="fav">' + avatar(HUMAN, S.my, 'Você', '') + '</div><div class="piles">' + pileHTML(me.library.length, 'Seu grimório') + '</div></div>'
+      + '<div class="edge me"><div class="lrow me">' + landsMarkup(HUMAN) + '</div><div class="fav">' + avatar(HUMAN, myCols(), 'Você', '') + '</div><div class="piles">' + pileHTML(me.library.length, 'Seu grimório') + '</div></div>'
       + '</div>'
       + (lessonBox || tipBox ? '<div class="banners">' + lessonBox + tipBox + '</div>' : '')
       + turnDock()
@@ -3824,6 +3925,29 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     }
   }
 
+  /* Iniciante: resultado previsto de cada combate com os bloqueios escolhidos até agora */
+  function blockOutcome(a, bs) {
+    const r = AI.fight(AI.st(g, a), bs.map(b => AI.st(g, b)));
+    const dead = new Set(r.deadB); return { attDead: r.attDead, dead, toPlayer: r.toPlayer };
+  }
+  function blockPreview() {
+    const lines = []; let free = 0;
+    for (const a of g.attackersOf()) {
+      const bs = Object.keys(ui.blockMap).filter(u => ui.blockMap[u] === a.uid).map(u => g.perm(+u)).filter(Boolean);
+      if (!bs.length) { free += Math.max(0, g.power(a)); continue; }
+      const r = blockOutcome(a, bs), lost = bs.filter(b => r.dead.has(b.uid)).map(b => b.def.name);
+      const kept = bs.filter(b => !r.dead.has(b.uid)).map(b => b.def.name);
+      let t = a.def.name + ' contra ' + bs.map(b => b.def.name).join(' e ') + ': ';
+      if (r.attDead && lost.length) t += 'os dois morrem (troca).';
+      else if (r.attDead) t += 'o atacante morre e ' + kept.join(' e ') + ' sobrevive.';
+      else if (lost.length) t += lost.join(' e ') + ' morre e o atacante sobrevive.';
+      else t += 'ninguém morre.';
+      if (r.toPlayer) free += r.toPlayer;
+      lines.push(t);
+    }
+    if (lines.length || free) lines.push(free ? 'Dano que passa para você: ' + free + '.' : 'Nenhum dano passa para você.');
+    return lines;
+  }
   function controls() {
     const pend = ui.pending; let status = '', buttons = '';
     const B = (act, label, primary, extra) => '<button class="btn' + (primary ? ' primary' : '') + '" data-act="' + act + '"' + (extra || '') + '>' + label + '</button>';
@@ -3843,6 +3967,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       const n = Object.keys(ui.blockMap).length;
       const inc = g.attackersOf().reduce((s, q) => s + Math.max(0, g.power(q)), 0);
       status = '<b>Você está sendo atacado (' + inc + ' de dano).</b> ' + (ui.blockSel ? 'Agora toque no atacante que ela vai bloquear.' : 'Toque numa criatura sua e depois no atacante.');
+      if (isIni()) status += blockPreview().map(l => '<br>• ' + esc(l)).join('');
       buttons = B('noblock', 'Não bloquear') + B('confirmblock', n ? 'Confirmar ' + n + ' bloqueio' + (n > 1 ? 's' : '') : 'Confirmar', true);
       return { status, buttons };
     }
@@ -3934,7 +4059,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
 
   function advLine() {
     if (!ui.advisor || !ui.adv || !ui.adv.line || g.winner != null) return '';
-    const av = ART['AV_' + avKey(S.my)];
+    const av = ART['AV_' + avKey(myCols())];
     return '<button class="advline' + (ui.adv.loading ? ' loading' : '') + '" data-act="drawer" data-v="chat" title="Abrir a conversa com a explicação">'
       + (av ? '<img src="art/' + av + '" alt="" decoding="async">' : '<span class="advdot"></span>')
       + '<span class="advtxt"><b>' + esc(ui.adv.line) + '</b>' + (ui.adv.sub ? '<small>' + esc(ui.adv.sub) + '</small>' : '') + '</span></button>';
@@ -3942,7 +4067,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
   function renderDrawer() {
     if (ui.drawer === 'chat') ui.chatSeen = ui.chat.length;
     const feed = ui.drawer === 'chat'
-      ? '<div class="feed" id="feed">' + (ui.chat.length ? ui.chat.map(m => '<div class="msg ' + (m.kind || '') + (m.wait ? ' wait' : '') + '">' + (m.kind === 'adv' &&ART['AV_' + avKey(S.my)] ? '<img class="mav" src="art/' + ART['AV_' + avKey(S.my)] + '" alt="" decoding="async">' : '') + '<span class="from">' + esc(m.from) + '</span>' + esc(m.text) + '</div>').join('') : '<div class="msg sys">As falas do adversário e da conselheira aparecem aqui.</div>') + '</div>'
+      ? '<div class="feed" id="feed">' + (ui.chat.length ? ui.chat.map(m => '<div class="msg ' + (m.kind || '') + (m.wait ? ' wait' : '') + '">' + (m.kind === 'adv' &&ART['AV_' + avKey(myCols())] ? '<img class="mav" src="art/' + ART['AV_' + avKey(myCols())] + '" alt="" decoding="async">' : '') + '<span class="from">' + esc(m.from) + '</span>' + esc(m.text) + '</div>').join('') : '<div class="msg sys">As falas do adversário e da conselheira aparecem aqui.</div>') + '</div>'
       : '<div class="feed log" id="feed">' + ui.log.map(l => '<div class="l' + (l.sep ? ' t' : '') + (l.me ? ' me' : '') + '">' + esc(l.t) + '</div>').join('') + '</div>';
     return '<aside class="drawer" aria-label="' + (ui.drawer === 'chat' ? 'Conversa' : 'Registro') + '"><div class="dhead"><div class="tabs"><button class="tab" data-act="drawer" data-v="chat" aria-selected="' + (ui.drawer === 'chat') + '">Conversa</button><button class="tab" data-act="drawer" data-v="log" aria-selected="' + (ui.drawer === 'log') + '">Registro</button></div><button class="btn small ghost" data-act="drawer" data-v="close" aria-label="Fechar painel">Fechar</button></div>' + feed + (ui.advisor && ui.drawer === 'chat' ? askBox() : '') + (ui.advisor ? '<div class="sidefoot"><button class="btn small" data-act="hint">Pedir conselho</button><button class="btn small ghost" data-act="advauto" aria-pressed="' + (S.advAuto !== false) + '">Conselho automático: ' + (S.advAuto !== false ? 'ligado' : 'desligado') + '</button></div>' : '') + '</aside>';
   }
@@ -4068,9 +4193,9 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     const w = g.winner; const win = w === HUMAN, draw = w === 'draw';
     const reason = g.endReason === 'rendicao' ? 'Você se rendeu.' : g.endReason === 'rendicaoOp' ? oppName() + ' se rendeu.' : g.endReason === 'grimorio' ? (win ? 'O oponente precisou comprar com o grimório vazio.' : 'Você precisou comprar com o grimório vazio.') : g.endReason === 'limite' ? 'A partida chegou ao limite de turnos.' : (win ? 'A vida do oponente chegou a zero.' : 'Sua vida chegou a zero.');
     const head = draw ? 'Empate' : win ? 'Vitória' : 'Derrota';
-    if (!ui.pvp && S.level === 3 && !ui.claudeOff) say('Claude', win ? 'Bem jogado. Você mereceu essa vitória.' : draw ? 'Empate. Foi uma partida equilibrada.' : 'Boa partida. Quer a revanche?', 'claude');
+    if (!ui.pvp && curLevel() === 3 && !ui.claudeOff) say('Claude', win ? 'Bem jogado. Você mereceu essa vitória.' : draw ? 'Empate. Foi uma partida equilibrada.' : 'Boa partida. Quer a revanche?', 'claude');
     if (ui.advisor) { const gg = g; ui.advisor.report(g, HUMAN).then(t => { if (g !== gg || !t) return; advSay(t, 'Relatório'); const el = document.getElementById('advrep'); if (el) { el.textContent = t; el.classList.remove('wait'); } }); }
-    if (!ui.pvp && S.level === 1) say('Instrutor', win ? 'Parabéns! Você venceu. Quando se sentir pronto, experimente o Cavaleiro.' : 'Faz parte do aprendizado. Reveja o registro para entender as jogadas decisivas.', 'inst');
+    if (!ui.pvp && curLevel() === 1) say('Instrutor', win ? (isIni() ? 'Parabéns! Você venceu. Experimente o outro deck ou, quando se sentir pronto, o treino livre com todas as cores.' : 'Parabéns! Você venceu. Quando se sentir pronto, experimente o Cavaleiro.') : 'Faz parte do aprendizado. Reveja o registro para entender as jogadas decisivas.', 'inst');
     const stats = '<div class="stats">'
       + '<div>Turnos<b>' + g.turn + '</b></div><div>Sua vida<b>' + g.players[HUMAN].life + '</b></div><div>Vida do oponente<b>' + g.players[OPP].life + '</b></div>'
       + '<div>Mágicas que você conjurou<b>' + g.stats.spells[HUMAN] + '</b></div><div>Dano que você causou<b>' + g.stats.dmg[HUMAN] + '</b></div><div>Dano que recebeu<b>' + g.stats.dmg[OPP] + '</b></div></div>'
@@ -4112,6 +4237,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     if (screen === 'start') {
       if (act === 'gallery') { renderGallery(); return; }
       if (act === 'mode') S.mode = t.dataset.v;
+      else if (act === 'ini') S.iniDeck = t.dataset.v === 'B' ? 'B' : 'A';
       else if (act === 'lvl') S.level = +t.dataset.v;
       else if (act === 'tier') S.tier = t.dataset.v;
       else if (act === 'aimode') S.aiMode = t.dataset.v;
@@ -4513,7 +4639,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
 
   window.__pvdbg = () => ({ seat: P.seat, game: P.game, meta: P.meta && { state: P.meta.state, game: P.meta.game }, screen, st: P.stream && { next: P.stream.next, end: P.stream.replayEnd, len: P.stream.moves.length, waiting: Object.keys(P.stream.waiters) }, pend: ui && ui.pending && ui.pending.type, mode: ui && ui.mode, wait: ui && ui.waitRemote, turn: g && g.turn, phase: g && g.phase });
   async function pvpBoot() {
-    S.mode = 'partida'; if (S.level > 2) S.level = 2;
+    if (S.mode !== 'iniciante') S.mode = 'partida'; if (S.level > 2) S.level = 2;
     try { NET = window.NET_MOCK || realNet(); } catch (e) { root.innerHTML = '<div class="start"><p class="pverr">Não consegui carregar o servidor do jogo.</p></div>'; return; }
     NET.onConnected(on => { P.online = on; if (screen === 'lobby' && !P.code) renderLobby(); else pvRefresh(); });
     renderLobby();
