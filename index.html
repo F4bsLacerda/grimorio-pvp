@@ -915,6 +915,27 @@ button.zc { cursor: pointer; } button.zc:hover { background: rgba(255,255,255,.0
   .dockb svg, .dockb.cmb:not([disabled]) svg, .dockb.flag svg { width: 20px; height: 20px; }
   .dockb { box-shadow: 0 0 0 2px rgba(10,11,15,.85), 0 4px 10px rgba(0,0,0,.6); }
 }
+/* rótulo sempre visível no botão principal do turno (antes só aparecia no hover e sumia no celular) */
+.dockb:not([disabled]):not(.flag) .dl { opacity: 1; display: block; }
+.dockb:not(.go) .dl { color: #d9cfb6; border-color: rgba(184,148,74,.3); }
+@media (max-width: 920px) { .dockb:not([disabled]):not(.flag) .dl { font-size: 11px; padding: 5px 7px; right: calc(100% + 6px); } }
+.dockb.wait { opacity: .55; }
+/* dica de primeira vez (flutua sobre o campo, não empurra o layout) */
+.coach { position: absolute; left: 14px; top: 14px; z-index: 40; width: min(400px, 40%); display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px; background: rgba(22,30,24,.96); border: 1px solid #4f8a5a; box-shadow: 0 10px 28px rgba(0,0,0,.6); font: 13.5px/1.45 var(--f-ui); color: var(--ink); }
+.coach b { display: block; color: #9fd8a8; font-family: var(--f-name); letter-spacing: .04em; margin-bottom: 2px; }
+.coach .btn { flex: none; }
+@media (max-width: 920px) { .coach { position: fixed; left: 12px; width: calc(100vw - 24px); } }
+/* última jogada do oponente, logo abaixo do selo central */
+.oppact { position: absolute; left: 50%; top: calc(100% + 6px); translate: -50% 0; width: max-content; max-width: min(460px, 78vw); padding: 5px 12px; border-radius: 8px; background: rgba(28,24,44,.92); border: 1px solid #5d5390; color: #ddd3ff; font: 12.5px/1.35 var(--f-ui); text-align: center; z-index: 6; pointer-events: none; }
+.midpill .wtxt { color: #ddd3ff; }
+.rfoot .btn.on { border-color: var(--gold); }
+@media (max-width: 920px) {
+  .tdock .dockb:not(.flag) { display: none; }
+  .tdock .dockb .dl { display: none !important; }
+  .coach { top: calc(10px + env(safe-area-inset-top, 0px)); bottom: auto; }
+  .actbox .status { font-size: 13.5px; }
+  .oppact { display: none; }
+}
 /* moldura de metal gravado (imagem) nos botões do turno */
 .tdock.framed .dockb, .tdock.framed .dockb.cmb:not([disabled]), .tdock.framed .dockb.nxt.go, .tdock.framed .dockb.cmb.blk:not([disabled]), .tdock.framed .dockb.end:not([disabled]), .tdock.framed .dockb.flag {
   width: 58px; height: 58px; border: 0; border-radius: 50%; background: var(--frame) center / 100% 100% no-repeat; box-shadow: none; animation: none; filter: drop-shadow(0 4px 8px rgba(0,0,0,.7)); }
@@ -2935,7 +2956,13 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
   // enquanto o jogador digita, não redesenha (o campo perderia o foco e o teclado do celular fecharia)
   function render() { if (screen === 'game' && askFocused()) { ui.dirty = true; return; } if (rq) return; rq = true; requestAnimationFrame(() => { rq = false; if (screen === 'game') renderGame(); }); }
   function onEvent(type, d) {
-    if (type === 'log') { ui.log.push({ t: d.text, me: d.who === HUMAN }); if (ui.log.length > 400) ui.log.shift(); }
+    if (type === 'turn') { ui.newTurn = true; ui.waitRemote = false; }
+    if (type === 'phase') { ui.newTurn = false; ui.waitRemote = false; ui.blkDone = false; }
+    if (type === 'log' && d.kind === 'block') ui.blkDone = true;
+    if (type === 'log') {
+      ui.log.push({ t: d.text, me: d.who === HUMAN }); if (ui.log.length > 400) ui.log.shift();
+      if (d.who === OPP && !(typeof replaying === 'function' && replaying())) { const k = (ui.oppAct && ui.oppAct.k || 0) + 1; ui.oppAct = { t: d.text, k }; setTimeout(() => { if (ui && ui.oppAct && ui.oppAct.k === k) { ui.oppAct = null; render(); } }, 4300); }
+    }
     if (type === 'turn') { ui.log.push({ t: 'Turno ' + d.turn + ' · ' + g.players[d.p].name, sep: true }); queueFx(() => turnBanner(d.p, d.turn)); }
     if (type === 'phase') {
       contStart('pill', '.midpill', [{ transform: 'scale(.72)', opacity: 0, filter: 'brightness(2.2)' }, { transform: 'scale(1.14)', opacity: 1, filter: 'brightness(1.5)', offset: .32 }, { transform: 'scale(1)', opacity: 1, filter: 'none' }], 820);
@@ -2958,6 +2985,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       for (const q of g.battlefield) for (const k of (q.def.type === 'creature' ? g.kws(q) : [])) {
         if (ui.seen.has('kw:' + k)) continue; ui.seen.add('kw:' + k);
         ui.chat.push({ from: 'Nova regra · ' + KWN[k], text: q.def.name + ' tem ' + KWN[k] + '. ' + KW_HELP[k], kind: 'lesson' });
+        coach('kw:' + k, 'Nova regra · ' + KWN[k], q.def.name + ' tem ' + KWN[k] + '. ' + KW_HELP[k], true);
       }
     }
     if (type === 'change' && S.mode === 'aprendiz') {
@@ -2975,8 +3003,8 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     if (type === 'spell') { if (FX.on) await playSpell(d.item); return; }
     if (type === 'damage' && FX.on) { await dissolveDying(); await sleep(260); return; }
     if (type === 'resolve' && FX.on) await dissolveDying();
-    if (type === 'turn') { await sleep(FX.on ? 1150 : 350); return; }
-    if (type === 'phase') { await sleep({ desvirar: 420, manutencao: 300, compra: 420, principal1: 260, combate: 380, principal2: 220, final: 260 }[d.phase] || 220); return; }
+    if (type === 'turn') { await sleep(FX.on ? 950 : 300); return; }
+    if (type === 'phase') { await sleep({ desvirar: 260, manutencao: 120, compra: 320, principal1: 220, combate: 380, principal2: 200, final: 220 }[d.phase] || 200); return; }
     const aiActs = (d.p != null ? d.p : g.priorityPlayer) === OPP;
     const t = { land: 300, cast: 650, resolve: 420, attack: FX.on ? 420 : 650, block: FX.on ? 420 : 650, damage: 750 }[type] || 200;
     await sleep(aiActs || type === 'damage' || type === 'block' || type === 'attack' ? t : Math.min(t, 220));
@@ -2995,6 +3023,25 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     const [t, body] = LESSONS[key];
     ui.chat.push({ from: 'Lição ' + n + ' de 8 · ' + t, text: body, kind: 'lesson' });
     if (ui.lesson) ui.lessonQueue.push({ n, t, body }); else ui.lesson = { n, t, body };
+    render();
+  }
+  /* dicas de primeira vez: aparecem uma vez por aparelho (no Iniciante, as de palavra-chave aparecem a cada partida) */
+  const COACH = {
+    principal: ['Sua fase principal', 'Toque num terreno da mão para jogá-lo (1 por turno) e depois nas cartas que brilham para conjurá-las. Quando terminar, use o botão com texto no canto do campo.'],
+    ataque: ['Hora de atacar', 'Toque nas suas criaturas que vão atacar e confirme no botão vermelho. Criaturas recém-chegadas ainda não atacam.'],
+    bloqueio: ['Você está sendo atacado', 'Toque numa criatura sua e depois no atacante que ela vai segurar. Sem bloqueio, o dano vai direto para a sua vida.'],
+    pilha: ['O oponente conjurou uma mágica', 'Antes de ela fazer efeito, você pode responder com um instantâneo (as cartas que brilham na sua mão). Se não quiser, toque em "Deixar resolver".'],
+    janela: ['Momento de resposta', 'O jogo parou porque você tem um instantâneo e mana para usá-lo agora. Toque na carta que brilha para usar ou em "Deixar passar".'],
+    espera: ['Vez do seu amigo', 'O selo no centro do campo mostra o que ele está decidindo. Assim que ele agir, o jogo continua sozinho.'],
+  };
+  function coachSeen() { try { return JSON.parse(localStorage.getItem('grimorio-dicas') || '{}'); } catch (e) { return {}; } }
+  function coach(key, title, body, perGame) {
+    if (!ui || (typeof replaying === 'function' && replaying())) return;
+    if (perGame) { if (!isIni() || ui.coachGame && ui.coachGame[key]) return; (ui.coachGame = ui.coachGame || {})[key] = 1; }
+    else { const s = coachSeen(); if (s[key]) return; s[key] = 1; try { localStorage.setItem('grimorio-dicas', JSON.stringify(s)); } catch (e) { } }
+    if (!title) { const c = COACH[key]; if (!c) return; title = c[0]; body = c[1]; }
+    const item = { title, body };
+    if (ui.coach) (ui.coachQ = ui.coachQ || []).push(item); else ui.coach = item;
     render();
   }
   function toast(t) {
@@ -3031,13 +3078,18 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       async chooseBottom(g, p, n) { return modalSelect({ title: 'Devolva ' + n + ' carta(s) ao fundo', text: 'Escolha o que mandar para o fundo do grimório.', cards: g.players[p].hand, n }); },
       async priority(g, p, win) {
         if (!shouldStop(p, win)) return { type: 'pass' };
+        // Principal 2 sem nada para jogar: não faz o jogador clicar à toa
+        if (win === 'main2' && !g.stack.length && !hasPlay()) return { type: 'pass' };
+        // opção "respostas automáticas": não para no turno do oponente nem para responder
+        if (S.autoResp && !g.sorcerySpeed(p)) return { type: 'pass' };
+        if (g.sorcerySpeed(p)) coach('principal'); else coach(g.stack.length ? 'pilha' : 'janela');
         advBegin(g.sorcerySpeed(p) ? 'main' : 'resp', { win });
         const v = await waitPending({ type: 'priority', win });
         advResolve(v); return v;
       },
       async chooseAttackers(g, p) {
         if (ui.autoEnd) return [];
-        ui.attackSel = new Set(); ui.mode = 'attack';
+        ui.attackSel = new Set(); ui.mode = 'attack'; coach('ataque');
         advBegin('attack');
         const v = await waitPending({ type: 'attack' });
         advResolve(v); return v;
@@ -3045,7 +3097,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       async chooseBlocks(g, p) {
         const atks = g.attackersOf(); const mine = g.creatures(p).filter(q => !q.tapped);
         if (!mine.some(b => atks.some(a => g.canBlockAttacker(b, a)))) { await sleep(500); return {}; }
-        ui.blockMap = {}; ui.blockSel = null; ui.mode = 'block';
+        ui.blockMap = {}; ui.blockSel = null; ui.mode = 'block'; coach('bloqueio');
         advBegin('block');
         const v = await waitPending({ type: 'block' });
         advResolve(v); return v;
@@ -3127,9 +3179,19 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     if (miss && miss.length) return 'Falta mana ' + miss.map(c => M.COLOR_INFO[c].nome.toLowerCase()).join(' e ') + ': você tem ' + free + ' mana livre, mas esta carta pede essa cor. Baixe um terreno dessa cor quando puder.';
     return '';
   }
-  function whyNot(c) {
+  // há algo que o jogador possa fazer agora? (terreno, mágica ou habilidade)
+  function hasPlay() {
+    const pl = g.players[HUMAN];
+    if (pl.hand.some(c => !whyNot(c, true))) return true;
+    return g.battlefield.some(q => q.controller === HUMAN && g.canActivate(HUMAN, q));
+  }
+  function castableNames() {
+    return g.players[HUMAN].hand.filter(c => c.def.type === 'instant' && !whyNot(c, true)).map(c => c.def.name)
+      .concat(g.battlefield.filter(q => q.controller === HUMAN && g.canActivate(HUMAN, q)).map(q => q.def.name + ' (habilidade)'));
+  }
+  function whyNot(c, ignorePending) {
     const d = c.def, p = HUMAN;
-    if (!ui.pending || ui.pending.type !== 'priority') return 'Aguarde: agora não é sua vez de agir.';
+    if (!ignorePending && (!ui.pending || ui.pending.type !== 'priority')) return 'Aguarde: agora não é sua vez de agir.';
     if (d.type === 'land') {
       if (g.players[p].landPlayed) return 'Você já jogou um terreno neste turno.';
       if (!g.sorcerySpeed(p)) return 'Terrenos só na sua fase principal, com a pilha vazia.';
@@ -3450,8 +3512,9 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       + '<div class="mcount"><b>' + src.length + '</b>' + (allGems.length ? '<span>de ' + allGems.length + ' livre' + (src.length === 1 ? '' : 's') + '</span>' : '') + '</div>'
       + landNote + '</section>';
     // fases (vertical)
-    const curPhase = COMBAT_SUB[g.phase] ? 'combate' : g.phase;
-    const phases = '<ol class="vphases" aria-label="Fases do turno">' + PHASES.map(([k, n, tip]) => '<li class="' + (k === curPhase ? 'on' : '') + '" title="' + esc(tip) + '"><span class="dot"></span>' + n + (k === 'combate' && COMBAT_SUB[g.phase] && g.phase !== 'combate' ? ' · ' + ({ atacantes: 'ataque', bloqueadores: 'bloqueios', dano: 'dano' })[g.phase] : '') + '</li>').join('') + '</ol>';
+    const curPhase = ui.newTurn ? 'desvirar' : COMBAT_SUB[g.phase] ? 'combate' : g.phase;
+    const INI_PH = [['inicio', 'Início', 'Desvirar tudo e comprar 1 carta. Acontece sozinho.', ['inicio', 'desvirar', 'manutencao', 'compra']], ['principal1', 'Principal 1', 'Jogue 1 terreno e conjure criaturas e feitiços.', ['principal1']], ['combate', 'Combate', 'Ataque com suas criaturas; o oponente escolhe os bloqueios.', ['combate']], ['principal2', 'Principal 2', 'Outra chance de conjurar, depois do combate.', ['principal2']], ['final', 'Fim', 'O turno passa para o oponente.', ['final', 'limpeza']]];
+    const phases = isIni() ? '<ol class="vphases" aria-label="Fases do turno">' + INI_PH.map(([k, n, tip, ks]) => '<li class="' + (ks.includes(curPhase) ? 'on' : '') + '" title="' + esc(tip) + '"><span class="dot"></span>' + n + (k === 'combate' && COMBAT_SUB[g.phase] && g.phase !== 'combate' ? ' · ' + ({ atacantes: 'ataque', bloqueadores: 'bloqueios', dano: 'dano' })[g.phase] : '') + '</li>').join('') + '</ol>' : '<ol class="vphases" aria-label="Fases do turno">' + PHASES.map(([k, n, tip]) => '<li class="' + (k === curPhase ? 'on' : '') + '" title="' + esc(tip) + '"><span class="dot"></span>' + n + (k === 'combate' && COMBAT_SUB[g.phase] && g.phase !== 'combate' ? ' · ' + ({ atacantes: 'ataque', bloqueadores: 'bloqueios', dano: 'dano' })[g.phase] : '') + '</li>').join('') + '</ol>';
     // pilha
     const stack = g.stack.length ? '<div class="stackbox"><div class="mlabel">PILHA · resolve de cima para baixo</div>' + g.stack.slice().reverse().map((s, i) => {
       const isT = tgtMode && isLegalTarget({ t: 'stack', sid: s.sid });
@@ -3459,10 +3522,14 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     }).join('') + '</div>' : '';
     const { status, buttons } = controls();
     // faixa central
-    const phaseName = (PHASES.find(x => x[0] === curPhase) || [0, ''])[1];
+    const phaseName = isIni() ? (INI_PH.find(x => x[3].includes(curPhase)) || [0, ''])[1] : (PHASES.find(x => x[0] === curPhase) || [0, ''])[1];
     const sub = { atacantes: 'Ataque declarado', bloqueadores: 'Bloqueios', dano: 'Dano' }[g.phase];
-    const midLabel = ui.mode === 'attack' ? 'Escolha seus atacantes' : ui.mode === 'block' ? 'Escolha seus bloqueadores' : tgtMode ? 'Escolha um alvo' : sub ? sub + ' · ' + (g.active === HUMAN ? 'você ataca' : oppName() + ' ataca') : (g.active === HUMAN ? 'Seu turno' : 'Turno de ' + oppName());
-    const mid = '<div class="midline"><span class="midpill ' + (g.active === HUMAN ? 'me' : 'opp') + (curPhase === 'combate' ? ' combat' : '') + '"><b>' + esc(phaseName.toUpperCase()) + '</b><span>' + esc(midLabel) + '</span></span></div>';
+    const pmain = pend && pend.type === 'priority' && !g.stack.length && g.sorcerySpeed(HUMAN);
+    const presp = pend && pend.type === 'priority' && !pmain;
+    const wshort = typeof waitShort === 'function' ? waitShort() : '';
+    const midLabel = ui.mode === 'attack' ? 'Escolha seus atacantes' : ui.mode === 'block' ? 'Escolha seus bloqueadores' : tgtMode ? 'Escolha um alvo' : presp ? 'Você pode responder' : pmain ? 'Sua vez: jogue suas cartas' : wshort ? wshort : sub ? sub + ' · ' + (g.active === HUMAN ? 'você ataca' : oppName() + ' ataca') : (g.active === HUMAN ? 'Seu turno' : 'Turno de ' + oppName());
+    const oppAct = ui.oppAct ? '<div class="oppact">' + esc(ui.oppAct.t) + '</div>' : '';
+    const mid = '<div class="midline"><span class="midpill ' + (g.active === HUMAN ? 'me' : 'opp') + (curPhase === 'combate' ? ' combat' : '') + '"><b>' + esc(phaseName.toUpperCase()) + '</b><span' + (wshort && !pend ? ' class="wtxt"' : '') + '>' + esc(midLabel) + '</span>' + oppAct + '</span></div>';
     // mão em leque
     const n = me.hand.length;
     const hand = me.hand.map((c, i) => {
@@ -3501,6 +3568,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       + '<div class="edge me"><div class="lrow me">' + landsMarkup(HUMAN) + '</div><div class="fav">' + avatar(HUMAN, myCols(), 'Você', '') + '</div><div class="piles">' + pileHTML(me.library.length, 'Seu grimório') + '</div></div>'
       + '</div>'
       + (lessonBox || tipBox ? '<div class="banners">' + lessonBox + tipBox + '</div>' : '')
+      + (ui.coach && g.winner == null ? '<div class="coach" role="status"><div style="flex:1"><b>' + esc(ui.coach.title) + '</b>' + esc(ui.coach.body) + '</div><button class="btn small primary" data-act="coachok">Entendi</button></div>' : '')
       + turnDock()
       + '<div class="hand2" aria-label="Sua mão" style="--ov:' + (n <= 5 ? 0.22 : Math.min(0.62, 0.22 + (n - 5) * 0.08)).toFixed(2) + '">' + hand + '</div>'
       + '</main>'
@@ -3508,8 +3576,8 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       + '<div class="preview" id="preview">' + previewHTML() + '</div>'
       + stack
       + '<div class="turnbox"><div class="tt">Turno ' + g.turn + '</div><div class="tw">' + (g.active === HUMAN ? 'Seu turno' : 'Turno de ' + esc(oppName())) + '</div>' + phases + '</div>'
-      + '<div class="actbox">' + advLine() + '<div class="status">' + status + '</div><div class="actions">' + (g.winner != null ? buttons : (buttons.match(/<button[^>]*data-act="hint"[^>]*>[^<]*<\/button>/) || [''])[0]) + '</div></div>'
-      + '<div class="rfoot"><button class="btn small" data-act="drawer" data-v="chat">Conversa' + (unread > 0 && ui.drawer !== 'chat' ? ' <span class="badge-n">' + unread + '</span>' : '') + '</button><button class="btn small" data-act="drawer" data-v="log">Registro</button><button class="btn small ghost" data-act="rules">Como jogar</button><button class="btn small ghost" data-act="menu">' + (ui.pvp ? 'Sair da sala' : 'Nova partida') + '</button></div>'
+      + '<div class="actbox">' + advLine() + '<div class="status">' + status + '</div><div class="actions">' + (g.winner != null || innerWidth <= 920 ? buttons : (buttons.match(/<button[^>]*data-act="hint"[^>]*>[^<]*<\/button>/) || [''])[0]) + '</div></div>'
+      + '<div class="rfoot"><button class="btn small" data-act="drawer" data-v="chat">Conversa' + (unread > 0 && ui.drawer !== 'chat' ? ' <span class="badge-n">' + unread + '</span>' : '') + '</button><button class="btn small" data-act="drawer" data-v="log">Registro</button><button class="btn small ghost" data-act="rules">Como jogar</button><button class="btn small ghost' + (S.autoResp ? ' on' : '') + '" data-act="autoresp" title="Quando ligado, o jogo não para no turno do oponente para você responder com instantâneos.">Respostas: ' + (S.autoResp ? 'automáticas' : 'perguntar') + '</button><button class="btn small ghost" data-act="menu">' + (ui.pvp ? 'Sair da sala' : 'Nova partida') + '</button></div>'
       + '</aside>'
       + (ui.drawer ? renderDrawer() : '')
       + '</div>';
@@ -3948,6 +4016,19 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     if (lines.length || free) lines.push(free ? 'Dano que passa para você: ' + free + '.' : 'Nenhum dano passa para você.');
     return lines;
   }
+  /* o que está acontecendo quando não é a vez do jogador decidir */
+  function idleText() {
+    const top = g.stack[g.stack.length - 1];
+    if (top) return 'Resolvendo ' + esc(top.name) + '…';
+    if (ui.oppAct && g.active !== HUMAN) return esc(ui.oppAct.t);
+    if (ui.newTurn || g.phase === 'desvirar' || g.phase === 'manutencao' || g.phase === 'compra' || g.phase === 'inicio')
+      return g.active === HUMAN ? 'Início do seu turno: desvirando e comprando 1 carta…' : 'Início do turno de ' + esc(oppName()) + '…';
+    if (g.phase === 'dano') return 'Calculando o dano do combate…';
+    if (g.phase === 'bloqueadores') return ui.blkDone ? 'Bloqueios definidos…' : g.active === HUMAN ? esc(oppName()) + ' está escolhendo os bloqueios…' : 'Escolhendo bloqueios…';
+    if (g.phase === 'atacantes' && g.active !== HUMAN) return esc(oppName()) + ' atacou…';
+    if (g.phase === 'limpeza' || g.phase === 'final') return g.active === HUMAN ? 'Encerrando o seu turno…' : 'Fim do turno de ' + esc(oppName()) + '…';
+    return g.active === OPP ? 'Turno de ' + esc(oppName()) + '…' : 'Seguindo para a próxima fase…';
+  }
   function controls() {
     const pend = ui.pending; let status = '', buttons = '';
     const B = (act, label, primary, extra) => '<button class="btn' + (primary ? ' primary' : '') + '" data-act="' + act + '"' + (extra || '') + '>' + label + '</button>';
@@ -3973,25 +4054,29 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     }
     if (pend && pend.type === 'priority') {
       const top = g.stack[g.stack.length - 1];
-      if (top) { status = '<b>' + esc(top.name) + '</b> está na pilha. Responda com um instantâneo ou deixe resolver.'; buttons = B('pass', 'Deixar resolver', true); }
+      const can = castableNames();
+      const canTxt = can.length ? ' Você pode usar: <b>' + can.map(esc).join(', ') + '</b> (as cartas que brilham).' : '';
+      if (top) { status = (top.controller === HUMAN ? '<b>Sua mágica ' + esc(top.name) + '</b> está na pilha.' : '<b>' + esc(oppName()) + ' conjurou ' + esc(top.name) + '.</b> Antes de ela fazer efeito, você pode responder.') + canTxt + ' Ou toque em "Deixar resolver".'; buttons = B('pass', 'Deixar resolver', true); }
       else if (g.sorcerySpeed(HUMAN)) {
         const land = !g.players[HUMAN].landPlayed && g.players[HUMAN].hand.some(c => c.def.type === 'land');
-        status = '<b>' + (pend.win === 'main1' ? 'Principal 1' : 'Principal 2') + '.</b> ' + (land ? 'Jogue um terreno e conjure mágicas tocando nas cartas da mão.' : 'Conjure mágicas tocando nas cartas da mão.');
+        const canAtk1 = pend.win === 'main1' && g.creatures(HUMAN).some(q => g.canAttack(q));
+        status = '<b>Sua vez · ' + (pend.win === 'main1' ? 'Principal 1' : 'Principal 2') + '.</b> ' + (land ? 'Jogue um terreno e conjure as cartas que brilham.' : hasPlay() ? 'Conjure as cartas que brilham na sua mão.' : 'Nada mais para jogar agora.') + ' Depois toque em <b>' + (canAtk1 ? 'Ir para o combate' : 'Encerrar turno') + '</b>.';
         if (pend.win === 'main1') {
           const canAtk = g.creatures(HUMAN).some(q => g.canAttack(q));
-          buttons = B('endturn', 'Encerrar turno') + B('pass', canAtk ? 'Ir para o combate' : 'Avançar', true);
+          buttons = canAtk ? B('endturn', 'Encerrar turno') + B('pass', 'Ir para o combate', true) : B('endturn', 'Encerrar turno', true);
         } else buttons = B('pass', 'Encerrar turno', true);
       } else {
-        const msg = { attackers: 'O oponente atacou. Você pode usar um instantâneo antes dos bloqueios.', blockers: 'Bloqueios definidos. Último momento para truques de combate.', end: 'Fim do turno do oponente. Use um instantâneo ou passe.', upkeep: 'Manutenção.' }[pend.win] || 'Você pode usar um instantâneo.';
-        status = '<b>Sua prioridade.</b> ' + msg; buttons = B('pass', 'Passar', true);
+        const atkMe = g.active !== HUMAN;
+        const msg = { attackers: atkMe ? oppName() + ' atacou. Você pode usar um instantâneo antes de escolher os bloqueios.' : 'Você pode usar um instantâneo antes dos bloqueios.', blockers: 'Bloqueios definidos. Último momento para um truque de combate.', end: 'Fim do turno de ' + oppName() + '. Último momento para usar um instantâneo neste turno.', upkeep: 'Manutenção.' }[pend.win] || 'Você pode usar um instantâneo.';
+        status = '<b>Você pode responder.</b> ' + msg + canTxt + ' Ou toque em "Deixar passar".'; buttons = B('pass', 'Deixar passar', true);
       }
       if (ui.advisor && S.advAuto === false) buttons = B('hint', 'Conselho') + buttons;
       return { status, buttons };
     }
     if (ui.mode === 'attack' || ui.mode === 'block') return { status, buttons };
     if (ui.thinking) status = 'Claude está pensando na jogada…';
-    else if (ui.waitRemote) status = oppOnline() ? 'Aguardando ' + esc(oppName()) + '…' : esc(oppName()) + ' está desconectado. A partida continua quando ele voltar.';
-    else status = g.active === OPP ? 'Turno de ' + oppName() + '…' : 'Resolvendo…';
+    else if (ui.waitRemote) status = oppOnline() ? waitLong() : esc(oppName()) + ' está desconectado. A partida continua quando ele voltar.';
+    else status = idleText();
     return { status, buttons };
   }
 
@@ -4040,13 +4125,17 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       const pend = ui.pending, pri = pend && pend.type === 'priority';
       const main = pri && !g.stack.length && g.sorcerySpeed(HUMAN);
       const canCombat = main && pend.win === 'main1' && g.creatures(HUMAN).some(q => g.canAttack(q));
-      const passLabel = !pri ? 'Avançar fase' : g.stack.length ? 'Deixar resolver' : main ? (pend.win === 'main1' ? 'Avançar para o combate' : 'Avançar e encerrar') : 'Passar a vez';
-      list = btn('pass', 'combat', 'Ir para o combate', canCombat, 'cmb' + (canCombat ? ' go' : ''))
-        + btn('pass', 'next', passLabel, !!pri, 'nxt' + (pri && !canCombat ? ' go' : ''))
-        + btn(main && pend.win === 'main2' ? 'pass' : 'endturn', 'end', 'Encerrar turno', main, 'end');
+      if (!pri) list = btn('pass', 'next', 'Aguarde', false, 'nxt wait');
+      else if (canCombat) list = btn('pass', 'combat', 'Ir para o combate', true, 'cmb go') + btn('endturn', 'end', 'Encerrar turno', true, 'end');
+      else if (main) list = btn(pend.win === 'main1' ? 'endturn' : 'pass', 'end', 'Encerrar turno', true, 'end go');
+      else list = btn('pass', 'next', g.stack.length ? 'Deixar resolver' : 'Deixar passar', true, 'nxt go');
     }
     const fr = ART.UI_BOTAO ? ' framed" style="--frame:url(art/' + ART.UI_BOTAO + ')' : '';
     return '<nav class="tdock' + fr + '" aria-label="Ações do turno">' + list + flag + '</nav>';
+  }
+  function doEndTurn() {
+    if (!ui.pending || ui.pending.type !== 'priority') return;
+    ui.autoEnd = true; const t0 = g.turn; const off = () => { if (!g || g.turn !== t0) { if (ui) ui.autoEnd = false; } else setTimeout(off, 300); }; off(); finish({ type: 'pass' });
   }
   function concede() {
     if (!g || g.winner != null) return;
@@ -4269,6 +4358,9 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     if (act === 'drawer') { const v = t.dataset.v; ui.drawer = v === 'close' || ui.drawer === v ? null : v; render(); return; }
     if (act === 'lessonok') { ui.lesson = ui.lessonQueue.shift() || null; render(); return; }
     if (act === 'tipok') { ui.tipNow = null; render(); return; }
+    if (act === 'coachok') { ui.coach = (ui.coachQ || []).shift() || null; render(); return; }
+    if (act === 'autoresp') { S.autoResp = !S.autoResp; save(); toast(S.autoResp ? 'Respostas automáticas: o jogo não para mais no turno do oponente.' : 'O jogo vai parar quando você puder responder.'); render(); return; }
+    if (act === 'endturnok') { closeModal(); doEndTurn(); return; }
     if (act === 'hint') { hint(); return; }
     if (act === 'askq') { askAdvisor(null, t.dataset.v); return; }
     if (act === 'advauto') { S.advAuto = S.advAuto === false; save(); if (S.advAuto !== false && ui.adv.kind && !ui.adv.shown) { ui.adv.key++; advCompute(); } render(); return; }
@@ -4320,7 +4412,14 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     if (act === 'concede') { openModal('<h3>Render-se?</h3><p>A partida termina agora e conta como derrota.</p><div class="foot"><button class="btn" data-act="close">Continuar jogando</button><button class="btn primary" data-act="concedeok">Render-se</button></div>'); return; }
     if (act === 'concedeok') { closeModal(); concede(); return; }
     if (act === 'pass') { if (ui.pending && ui.pending.type === 'priority') finish({ type: 'pass' }); return; }
-    if (act === 'endturn') { if (ui.pending && ui.pending.type === 'priority') { ui.autoEnd = true; const t0 = g.turn; const off = () => { if (g.turn !== t0) ui.autoEnd = false; else setTimeout(off, 300); }; off(); finish({ type: 'pass' }); } return; }
+    if (act === 'endturn') {
+      if (!ui.pending || ui.pending.type !== 'priority') return;
+      if (ui.pending.win === 'main1' && g.creatures(HUMAN).some(q => g.canAttack(q))) {
+        openModal('<h3>Encerrar sem atacar?</h3><p>Você tem criaturas que podem atacar neste turno. Se encerrar agora, o combate é pulado.</p><div class="foot"><button class="btn" data-act="close">Voltar</button><button class="btn primary" data-act="endturnok">Encerrar sem atacar</button></div>');
+        return;
+      }
+      doEndTurn(); return;
+    }
     if (act === 'card' && uid != null) {
       const inHand = g.players[HUMAN].hand.find(c => c.uid === uid);
       if (inHand && ui.pending && ui.pending.type === 'priority' && !whyNot(inHand) && inHand.def.type === 'land') { tryPlay(uid); return; }
@@ -4451,7 +4550,8 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
           mv = { by: P.uid, k: m, s, v: JSON.stringify(v === undefined ? null : v), h };
           await st.put(i, mv);
         } else if (mv === undefined) {
-          ui.waitRemote = true; render();
+          ui.waitRemote = { m, win: m === 'priority' ? rest[1] : null }; render();
+          if (!replaying()) coach('espera');
           mv = await st.get(i);
           ui.waitRemote = false; render();
         }
@@ -4462,6 +4562,32 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
     };
     return [mk(0), mk(1)];
   }
+
+  /* o que o amigo está decidindo (o motor sabe; antes a tela só dizia "Aguardando…") */
+  function waitInfo() {
+    const w = ui && ui.waitRemote; if (!w || !g) return null;
+    const n = oppName(), top = g.stack[g.stack.length - 1];
+    const atk = g.attackersOf().length;
+    switch (w.m) {
+      case 'chooseMulligan': case 'chooseBottom': return [n + ' escolhe a mão inicial', n + ' está decidindo se fica com a mão inicial.'];
+      case 'chooseAttackers': return [n + ' escolhe atacantes', n + ' está escolhendo quais criaturas vão atacar você.'];
+      case 'chooseBlocks': return [n + ' escolhe bloqueios', n + ' está escolhendo como bloquear ' + (atk === 1 ? 'o seu atacante' : 'os seus ' + atk + ' atacantes') + '.'];
+      case 'chooseTarget': return [n + ' escolhe um alvo', n + ' está escolhendo o alvo da mágica.'];
+      case 'chooseScry': return [n + ' faz vidência', n + ' está olhando o topo do grimório dele.'];
+      case 'chooseDiscard': return [n + ' escolhe o descarte', n + ' está escolhendo o que descartar.'];
+      case 'choosePay': return [n + ' decide se paga', n + ' está decidindo se paga para manter a mágica dele.'];
+      case 'choosePick': return [n + ' escolhe seu descarte', n + ' está escolhendo uma carta da sua mão para você descartar.'];
+    }
+    if (top) return top.controller === HUMAN ? [n + ' pode responder', n + ' pode responder à sua ' + top.name + ' com um instantâneo, ou deixar resolver.'] : [n + ' decide', n + ' está decidindo o que fazer com a mágica na pilha.'];
+    const win = w.win;
+    if (win === 'main1' || win === 'main2') return [n + ' está jogando', 'Fase principal de ' + n + ': jogando terrenos e conjurando.'];
+    if (win === 'attackers') return [n + ' pode reagir', n + ' pode usar um instantâneo antes dos bloqueios.'];
+    if (win === 'blockers') return [n + ' pode reagir', 'Bloqueios definidos: ' + n + ' pode usar um truque de combate.'];
+    if (win === 'end') return [n + ' pode reagir', 'Fim do seu turno: ' + n + ' ainda pode usar um instantâneo.'];
+    return [n + ' decide', n + ' está decidindo.'];
+  }
+  function waitShort() { const i = waitInfo(); return i ? i[0] : ''; }
+  function waitLong() { const i = waitInfo(); return i ? esc(i[1]) + ' <span style="opacity:.7">O jogo segue sozinho quando ' + esc(oppName()) + ' agir.</span>' : 'Aguardando ' + esc(oppName()) + '…'; }
 
   /* ---------- partida PvP ---------- */
   async function startPvp(meta) {
@@ -4514,7 +4640,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       + '<section class="box"><h2>SEU NOME</h2><input class="pvin" id="pvnick" maxlength="18" placeholder="Como seu amigo vai te ver" value="' + esc(P.nick) + '"></section>'
       + '<section class="box"><h2>CRIAR UMA SALA</h2><p class="hint">Você recebe um código e um link para mandar.</p><button class="btn primary" data-act="pvcreate"' + (P.uid ? '' : ' disabled') + '>Criar sala</button></section>'
       + '<section class="box"><h2>ENTRAR COM CÓDIGO</h2><div class="row"><input class="pvin code" id="pvcode" maxlength="4" placeholder="ABCD" autocomplete="off"><button class="btn" data-act="pvjoin"' + (P.uid ? '' : ' disabled') + '>Entrar</button></div></section>'
-      + '<section class="box"><h2>TREINAR SOZINHO</h2><p class="hint">Jogue contra o computador (Instrutor ou Cavaleiro).</p><button class="btn" data-act="pvsolo">Jogar contra o computador</button></section>'
+      + '<section class="box"><h2>TREINAR SOZINHO</h2><p class="hint">Jogue contra o computador (Instrutor ou Cavaleiro). Primeira vez? Escolha o modo Iniciante.</p><button class="btn" data-act="pvsolo">Jogar contra o computador</button></section>'
       + '</div><div class="startfoot"><span></span><div class="row"><button class="btn ghost" data-act="rules">Como jogar</button></div></div></div>';
   }
   function deckChips(sel) { return M.COLORS.map(c => '<button class="cchip" data-act="pvdeck" data-v="' + c + '" aria-pressed="' + sel.includes(c) + '">' + pip(c).replace('class="pip', 'class="pip big') + '<span>' + M.COLOR_INFO[c].nome + '</span></button>').join(''); }
