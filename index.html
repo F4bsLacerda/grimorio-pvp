@@ -915,6 +915,7 @@ button.zc { cursor: pointer; } button.zc:hover { background: rgba(255,255,255,.0
   .dockb svg, .dockb.cmb:not([disabled]) svg, .dockb.flag svg { width: 20px; height: 20px; }
   .dockb { box-shadow: 0 0 0 2px rgba(10,11,15,.85), 0 4px 10px rgba(0,0,0,.6); }
 }
+.rfoot .mobonly { display: none; }
 /* rótulo sempre visível no botão principal do turno (antes só aparecia no hover e sumia no celular) */
 .dockb:not([disabled]):not(.flag) .dl { opacity: 1; display: block; }
 .dockb:not(.go) .dl { color: #d9cfb6; border-color: rgba(184,148,74,.3); }
@@ -930,6 +931,11 @@ button.zc { cursor: pointer; } button.zc:hover { background: rgba(255,255,255,.0
 .midpill .wtxt { color: #ddd3ff; }
 .rfoot .btn.on { border-color: var(--gold); }
 @media (max-width: 920px) {
+  .tdock { display: none; }
+  .rfoot .mobonly { display: inline-flex; }
+  .battle .crow[style*="--mpw"] > .pcard { --pw: var(--mpw); }
+  .battle .crow[style*="--mpw"] { gap: 6px; }
+  .battle .crow[style*="--mpw"] .pn { font-size: 9.5px; }
   .tdock .dockb:not(.flag) { display: none; }
   .tdock .dockb .dl { display: none !important; }
   .coach { top: calc(10px + env(safe-area-inset-top, 0px)); bottom: auto; }
@@ -3577,7 +3583,7 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
       + stack
       + '<div class="turnbox"><div class="tt">Turno ' + g.turn + '</div><div class="tw">' + (g.active === HUMAN ? 'Seu turno' : 'Turno de ' + esc(oppName())) + '</div>' + phases + '</div>'
       + '<div class="actbox">' + advLine() + '<div class="status">' + status + '</div><div class="actions">' + (g.winner != null || innerWidth <= 920 ? buttons : (buttons.match(/<button[^>]*data-act="hint"[^>]*>[^<]*<\/button>/) || [''])[0]) + '</div></div>'
-      + '<div class="rfoot"><button class="btn small" data-act="drawer" data-v="chat">Conversa' + (unread > 0 && ui.drawer !== 'chat' ? ' <span class="badge-n">' + unread + '</span>' : '') + '</button><button class="btn small" data-act="drawer" data-v="log">Registro</button><button class="btn small ghost" data-act="rules">Como jogar</button><button class="btn small ghost' + (S.autoResp ? ' on' : '') + '" data-act="autoresp" title="Quando ligado, o jogo não para no turno do oponente para você responder com instantâneos.">Respostas: ' + (S.autoResp ? 'automáticas' : 'perguntar') + '</button><button class="btn small ghost" data-act="menu">' + (ui.pvp ? 'Sair da sala' : 'Nova partida') + '</button></div>'
+      + '<div class="rfoot"><button class="btn small" data-act="drawer" data-v="chat">Conversa' + (unread > 0 && ui.drawer !== 'chat' ? ' <span class="badge-n">' + unread + '</span>' : '') + '</button><button class="btn small" data-act="drawer" data-v="log">Registro</button><button class="btn small ghost" data-act="rules">Como jogar</button><button class="btn small ghost' + (S.autoResp ? ' on' : '') + '" data-act="autoresp" title="Quando ligado, o jogo não para no turno do oponente para você responder com instantâneos.">Respostas: ' + (S.autoResp ? 'automáticas' : 'perguntar') + '</button><button class="btn small ghost mobonly" data-act="concede">Render-se</button><button class="btn small ghost" data-act="menu">' + (ui.pvp ? 'Sair da sala' : 'Nova partida') + '</button></div>'
       + '</aside>'
       + (ui.drawer ? renderDrawer() : '')
       + '</div>';
@@ -4084,7 +4090,17 @@ window.PVP_ART = {"u01":"u01.jpg","u02":"u02.jpg","u03":"u03.jpg","u04":"u04.jpg
      As do oponente ficam um pouco menores por padrão. */
   const OPP_SCALE = 0.88;
   function fitRows() {
-    if (innerWidth <= 920) return;
+    if (innerWidth <= 920) {
+      // celular: com o campo cheio, as cartas encolhem para caber em no máximo 2 linhas (a mão continua à vista)
+      for (const row of root.querySelectorAll('.battle .crow')) {
+        const n = row.querySelectorAll(':scope > .pcard').length; if (n <= 3 || n > 10) { row.style.removeProperty('--mpw'); continue; }
+        const cs = getComputedStyle(row), W = row.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+        const gap = 6, fit = k => Math.floor((W - (k - 1) * gap) / k) - 1;
+        const per = fit(n) >= 58 ? n : Math.ceil(n / 2);   // uma linha quando ainda dá para ler; senão, duas
+        row.style.setProperty('--mpw', Math.max(56, Math.min(84, fit(per))) + 'px');
+      }
+      return;
+    }
     for (const row of root.querySelectorAll('.battle .crow')) {
       const cards = row.querySelectorAll(':scope > .pcard'); const n = cards.length; if (!n) continue;
       const base = parseFloat(getComputedStyle(cards[0]).getPropertyValue('--pw')) || 108;
